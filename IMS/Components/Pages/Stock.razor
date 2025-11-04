@@ -20,40 +20,44 @@ else
             <DataAnnotationsValidator />
             <ValidationSummary />
 
-            <div class="mb-3">
-                <label>Name:</label>
-                <InputText class="form-control" @bind-Value="stockModel.Name" />
-            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 
-            <div class="mb-3">
-                <label>Serial Number:</label>
-                <InputText class="form-control" @bind-Value="stockModel.SerialNumber" />
-            </div>
+                <div class="mb-3">
+                    <label>Name:</label>
+                    <InputText class="form-control" @bind-Value="stockModel.Name" />
+                </div>
 
-            <div class="mb-3">
-                <label>Buy Price:</label>
-                <InputNumber class="form-control" @bind-Value="stockModel.BuyPrice" />
-            </div>
+                <div class="mb-3">
+                    <label>Serial Number:</label>
+                    <InputText class="form-control" @bind-Value="stockModel.SerialNumber" />
+                </div>
 
-            <div class="mb-3">
-                <label>Sell Price:</label>
-                <InputNumber class="form-control" @bind-Value="stockModel.SellPrice" />
-            </div>
+                <div class="mb-3">
+                    <label>Buy Price:</label>
+                    <InputNumber class="form-control" @bind-Value="stockModel.BuyPrice" />
+                </div>
 
-            <div class="mb-3">
-                <label>Supplier:</label>
-                <InputSelect @bind-Value="stockModel.SupplierId" class="form-control">
-                    <option value="0">-- Select Supplier --</option>
-                    @foreach (var kvp in suppliers)
-                    {
-                        <option value="@kvp.Key">@kvp.Value</option>
-                    }
-                </InputSelect>
-            </div>
+                <div class="mb-3">
+                    <label>Sell Price:</label>
+                    <InputNumber class="form-control" @bind-Value="stockModel.SellPrice" />
+                </div>
 
-            <div class="mb-3">
-                <label>Amount:</label>
-                <InputNumber class="form-control" @bind-Value="stockModel.Amount" />
+                <div class="mb-3">
+                    <label>Supplier:</label>
+                    <InputSelect @bind-Value="stockModel.SupplierId" class="form-control">
+                        <option value="0">-- Select Supplier --</option>
+                        @foreach (var kvp in suppliers)
+                        {
+                            <option value="@kvp.Key">@kvp.Value</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="mb-3">
+                    <label>Amount:</label>
+                    <InputNumber class="form-control" @bind-Value="stockModel.Amount" />
+                </div>
+
             </div>
 
             <button class="btn btn-primary me-2" type="submit">
@@ -133,7 +137,7 @@ else
     {
         //TODO: Add a error
         //This had an error by defualt but setting value="0" breaks this, but if I remove the 0 it doesnt select the first option by default.
-        if (stockModel.SupplierId == 0)
+        if (stockModel.SupplierId == 0 || !stockModel.Amount.HasValue || stockModel.Amount.Value < 0)
             return;
 
         if (editMode)
