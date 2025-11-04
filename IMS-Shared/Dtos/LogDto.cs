@@ -1,17 +1,13 @@
 ﻿using IMS_Shared.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace IMS_Backend.Models;
+namespace IMS_Shared.Dtos;
 
-public class Log
+public class LogDto
 {
     public int Id { get; set; }
-
     public DateTime Date { get; set; } = DateTime.UtcNow;
-
     public LogType TypeEnum { get; set; }
-
-    [MaxLength(500)]
     public string? Description { get; set; }
 }
 

@@ -1,5 +1,6 @@
 using IMS_Backend.Models;
 using IMS_Shared.Dtos;
+using IMS_Shared.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,8 @@ namespace IMS_Backend.Controllers;
 [Route("api/[controller]")]
 public class InventoryController(AppDbContext context) : ControllerBase
 {
+    //TODO: Make logs more detailed and useful
+
 
     // -------------------------------
     // ADD SUPPLIER
@@ -45,13 +48,13 @@ public class InventoryController(AppDbContext context) : ControllerBase
     public async Task<IActionResult> GetSuppliers()
     {
         var suppliers = await context.Suppliers
-            .Select(x => new SupplierDto() 
-            { 
-                Id = x.Id, 
-                Name= x.Name
+            .Select(x => new SupplierDto()
+            {
+                Id = x.Id,
+                Name = x.Name
             })
             .ToListAsync();
-        
+
         return Ok(suppliers);
     }
 
@@ -82,7 +85,17 @@ public class InventoryController(AppDbContext context) : ControllerBase
     [HttpGet("get-logs")]
     public async Task<IActionResult> GetLogs()
     {
-        var logs = await context.Logs.ToListAsync();
+        var logs = await context.Logs
+            .OrderByDescending(x => x.Date)
+            .Select(x => new LogDto
+            {
+                Id = x.Id,
+                Date = x.Date,
+                TypeEnum = x.TypeEnum,
+                Description = x.Description
+            })
+            .ToListAsync();
+
         return Ok(logs);
     }
 

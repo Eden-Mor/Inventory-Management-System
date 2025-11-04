@@ -25,8 +25,8 @@ public class InventoryApiClient
         => await _http.GetFromJsonAsync<List<StockDto>>("/api/Inventory/get-all-stocks");
 
     // GET /api/Inventory/get-logs
-    public async Task<HttpResponseMessage> GetLogsAsync()
-        => await _http.GetAsync("/api/Inventory/get-logs");
+    public async Task<List<LogDto>?> GetLogsAsync()
+        => await _http.GetFromJsonAsync<List<LogDto>>("/api/Inventory/get-logs");
 
     // POST /api/Inventory/add-stock
     public async Task<HttpResponseMessage> AddStockAsync(StockDto dto)

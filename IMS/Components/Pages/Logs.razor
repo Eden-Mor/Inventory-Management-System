@@ -1,0 +1,57 @@
+﻿@page "/logs"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>Logs</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in logs)
+            {
+                <tr>
+                    <td>@s.Id</td>
+                    <td>@s.TypeEnum</td>
+                    <td>@s.Date</td>
+                    <td>@s.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<LogDto> logs = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await GetLogsAsync();
+        isLoading = false;
+    }
+
+    private async Task GetLogsAsync()
+    {
+        //TODO: Make an exception
+        //TODO: Paginate logs
+        logs = await ApiClient.GetLogsAsync() ?? new();
+    }
+}
