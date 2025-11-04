@@ -161,23 +161,6 @@ public class InventoryController(AppDbContext context) : ControllerBase
     }
 
     // -------------------------------
-    // ADD INVENTORY
-    // -------------------------------
-    [HttpPost("add-inventory")]
-    public async Task<IActionResult> AddInventory([FromBody] InventoryDto model)
-    {
-        var stock = await context.Stocks.FindAsync(model.StockId);
-        if (stock == null)
-            return NotFound("Stock not found.");
-
-        stock.Amount += model.Amount;
-
-        await context.SaveChangesAsync();
-        await CreateLog(LogType.Added_Item, $"Added {model.Amount} to inventory for {stock.Name}");
-        return Ok(stock);
-    }
-
-    // -------------------------------
     // CREATE PURCHASE
     // -------------------------------
     [HttpPost("create-purchase")]

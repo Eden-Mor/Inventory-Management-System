@@ -40,10 +40,6 @@ public class InventoryApiClient
     public async Task<HttpResponseMessage> EditStockAsync(int id, StockDto dto)
         => await _http.PutAsJsonAsync($"/api/Inventory/edit-stock/{id}", dto);
 
-    // POST /api/Inventory/add-inventory
-    public async Task<HttpResponseMessage> AddInventoryAsync(InventoryDto dto)
-        => await _http.PostAsJsonAsync("/api/Inventory/add-inventory", dto);
-
     // POST /api/Inventory/create-purchase
     public async Task<HttpResponseMessage> CreatePurchaseAsync(PurchaseRequestDto dto)
         => await _http.PostAsJsonAsync("/api/Inventory/create-purchase", dto);
