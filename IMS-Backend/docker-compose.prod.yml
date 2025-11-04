@@ -1,0 +1,17 @@
+services:
+  imsapi:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    ports:
+      - "9555:8080"
+    networks:
+      - front
+
+  db:
+    ports:
+      - "9556:5432"
+      
+networks:
+  front:
+    external: true
+# docker-compose -f docker-compose.yml -f docker-compose.prod.yml up

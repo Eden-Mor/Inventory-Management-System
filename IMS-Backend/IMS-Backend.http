@@ -1,0 +1,7 @@
+@IMS_Backend_HostAddress = http://localhost:5137
+
+GET {{IMS_Backend_HostAddress}}/
+forecast/
+Accept: application/json
+
+###

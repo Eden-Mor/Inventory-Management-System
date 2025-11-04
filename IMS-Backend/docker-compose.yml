@@ -1,0 +1,32 @@
+services:
+  imsapi:
+    image: ${DOCKER_REGISTRY-}imsapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=ims;Username=postgres;Password=supersecret
+    depends_on:
+      - db
+    networks:
+      - ims-network
+    restart: always
+  
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: supersecret
+      POSTGRES_DB: ims
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ims-network
+
+volumes:
+  pgdata:
+  
+networks:
+  ims-network:
+    driver: bridge  

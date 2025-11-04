@@ -1,0 +1,83 @@
+﻿@page "/suppliers"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>Suppliers Management</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card p-3 mb-4">
+        <h5>Add New Supplier</h5>
+        <EditForm Model="supplierModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label>Name:</label>
+                <InputText class="form-control" @bind-Value="supplierModel.Name" />
+            </div>
+
+            <button class="btn btn-primary me-2" type="submit">
+                Add Supplier
+            </button>
+
+        </EditForm>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in suppliers)
+            {
+                <tr>
+                    <td>@s.Key</td>
+                    <td>@s.Value</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Dictionary<int, string> suppliers = new();
+    private SupplierDto supplierModel = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await GetSuppliers();
+        isLoading = false;
+    }
+
+    private async Task GetSuppliers()
+    {
+        //TODO: Make an exception
+        var suppliersList = await ApiClient.GetSuppliersAsync() ?? new();
+        suppliers = suppliersList.ToDictionary(s => s.Id, s => s.Name);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await ApiClient.AddSupplierAsync(supplierModel);
+        //TODO: If you get an error from the add supplier section, report it.
+        //Such as, the name already existings.
+     
+        await GetSuppliers();
+    }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+}
