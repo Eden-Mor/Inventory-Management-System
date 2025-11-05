@@ -1,0 +1,170 @@
+﻿@page "/purchase"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>New Purchase</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <div class="mb-3">
+        <label>Buyer Name:</label>
+        <InputText @bind-Value="buyerName" class="form-control" placeholder="Enter buyer name" />
+    </div>
+
+    <hr />
+
+    <h4>Available Stock</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Available</th>
+                <th>Price</th>
+                <th>Add/Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in stockList.Where(x=>x.Amount > 0))
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Amount</td>
+                    <td>@item.SellPrice.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-1" @onclick="() => AddToCart(item)">+</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveFromCart(item)">−</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <hr />
+
+    <h4>Current Purchase</h4>
+
+    @if (cart.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Price Each</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cartItem in cart)
+                {
+                    <tr>
+                        <td>@cartItem.Key.Name</td>
+                        <td>@cartItem.Value</td>
+                        <td>@cartItem.Key.SellPrice.ToString("C")</td>
+                        <td>@((cartItem.Value * cartItem.Key.SellPrice).ToString("C"))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h5>Total: @TotalPrice.ToString("C")</h5>
+
+        <button class="btn btn-success" @onclick="BuyAsync">Buy</button>
+    }
+    else
+    {
+        <p>No items in purchase yet.</p>
+    }
+
+}
+
+@code {
+    private string buyerName = string.Empty;
+    private List<StockDto> stockList = new();
+    private Dictionary<StockDto, int> cart = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await LoadStocksAsync();
+        isLoading = false;
+    }
+
+    private async Task LoadStocksAsync()
+    {
+        //TODO: Make an exception
+        stockList = await ApiClient.GetAllStocksAsync() ?? new();
+    }
+
+
+    private void AddToCart(StockDto item)
+    {
+        if (cart.TryGetValue(item, out var amount))
+        {
+            if (amount < item.Amount)
+                cart[item]++;
+        }
+        else
+        {
+            if (item.Amount > 0)
+                cart.TryAdd(item, 1);
+        }
+    }
+
+    private void RemoveFromCart(StockDto item)
+    {
+        if (!cart.TryGetValue(item, out _))
+            return;
+
+        cart[item]--;
+        if (cart[item] <= 0)
+            cart.Remove(item);
+    }
+
+    private decimal TotalPrice => cart.Sum(c => c.Value * c.Key.SellPrice);
+
+    private async Task BuyAsync()
+    {
+        //TODO: VALIDATE INPUT
+        if (string.IsNullOrWhiteSpace(buyerName))
+        {
+            Console.WriteLine("Buyer name is required.");
+            return;
+        }
+
+        if (!cart.Any())
+        {
+            Console.WriteLine("Cart is empty.");
+            return;
+        }
+
+
+        //TODO: CHECK IF SUCCESSFUL
+        await ApiClient.CreatePurchaseAsync(new PurchaseRequestDto
+        {
+            BuyerName = buyerName,
+            Items = cart.Select(c => new PurchaseItemDto
+            {
+                StockId = c.Key.StockId ?? 0,
+                Amount = c.Value
+            }).ToList()
+        });
+
+        //TODO: PRINT LIST OF PURCHASED ITEMS
+
+        cart.Clear();
+        buyerName = string.Empty;
+
+        await LoadStocksAsync();
+    }
+}
