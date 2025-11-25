@@ -1,4 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Layout.NavMenu> L
+
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">IMS</a>
     </div>
@@ -10,31 +14,37 @@
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @L["Home"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="stock">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Stock
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Stock"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="purchase">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Purchase
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Purchase"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="Suppliers">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Suppliers
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Suppliers"]
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="Logs">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Logs
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Logs"]
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="Language">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Language"]
             </NavLink>
         </div>
     </nav>

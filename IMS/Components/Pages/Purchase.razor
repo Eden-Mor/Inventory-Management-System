@@ -2,34 +2,37 @@
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.Extensions.Localization
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@inject IStringLocalizer<IMS.Components.Pages.Purchase> L
 
-<h3>New Purchase</h3>
+<h3>@L["Title"]</h3>
+
 
 @if (isLoading)
 {
-    <p>Loading...</p>
+    <p>@L["Loading"]</p>
 }
 else
 {
 
     <div class="mb-3">
-        <label>Buyer Name:</label>
-        <InputText @bind-Value="buyerName" class="form-control" placeholder="Enter buyer name" />
+        <label>@L["BuyerName"]:</label>
+        <InputText @bind-Value="buyerName" class="form-control" placeholder="@L["EnterBuyerName"]" />
     </div>
 
     <hr />
 
-    <h4>Available Stock</h4>
+    <h4>@L["AvailableStock"]</h4>
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Available</th>
-                <th>Price</th>
-                <th>Add/Remove</th>
+                <th>@L["Name"]</th>
+                <th>@L["Available"]</th>
+                <th>@L["Price"]</th>
+                <th>@L["AddRemove"]</th>
             </tr>
         </thead>
         <tbody>
@@ -50,17 +53,17 @@ else
 
     <hr />
 
-    <h4>Current Purchase</h4>
+    <h4>@L["CurrentPurchase"]</h4>
 
     @if (cart.Any())
     {
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>Item</th>
-                    <th>Quantity</th>
-                    <th>Price Each</th>
-                    <th>Total</th>
+                    <th>@L["Item"]</th>
+                    <th>@L["Quantity"]</th>
+                    <th>@L["PriceEach"]</th>
+                    <th>@L["Total"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -76,13 +79,13 @@ else
             </tbody>
         </table>
 
-        <h5>Total: @TotalPrice.ToString("C")</h5>
+        <h5>@L["Total"]: @TotalPrice.ToString("C")</h5>
 
-        <button class="btn btn-success" @onclick="BuyAsync">Buy</button>
+        <button class="btn btn-success" @onclick="BuyAsync">@L["Buy"]</button>
     }
     else
     {
-        <p>No items in purchase yet.</p>
+        <p>@L["NoItemsInPurchase"]</p>
     }
 
 }

@@ -1,0 +1,35 @@
+﻿@page "/language"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject NavigationManager Nav
+
+<h3>Select Language</h3>
+
+<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.English)">English</button>
+<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.Hebrew)">עברית</button>
+
+@code {
+    private void ChangeLanguage(LanguageEnum language)
+    {
+        var culture = string.Empty;
+        switch (language)
+        {
+            case LanguageEnum.English:
+                culture = "en-US";
+                break;
+            case LanguageEnum.Hebrew:
+                culture = "he-IL";
+                break;
+        }
+
+        var uri = new Uri(Nav.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+
+        Nav.NavigateTo($"/setlanguage/{culture}?returnUrl=/{uri}", forceLoad: true);
+    }
+
+    public enum LanguageEnum
+    {
+        English = 0,
+        Hebrew = 1
+    }
+}
