@@ -1,4 +1,5 @@
 ﻿using IMS_Shared.Dtos;
+using System.Net.Http.Json;
 
 namespace IMS.Helpers;
 
@@ -43,5 +44,21 @@ public class InventoryApiClient
     // POST /api/Inventory/create-purchase
     public async Task<HttpResponseMessage> CreatePurchaseAsync(PurchaseRequestDto dto)
         => await _http.PostAsJsonAsync("/api/Inventory/create-purchase", dto);
+
+    // GET /api/Inventory/get-orders
+    public async Task<List<SupplierOrderDto>?> GetSupplierOrdersAsync()
+        => await _http.GetFromJsonAsync<List<SupplierOrderDto>>("/api/Inventory/get-orders");
+
+    // POST /api/Inventory/mark-order-received
+    public async Task<HttpResponseMessage> MarkOrderReceivedAsync(int id)
+        => await _http.PostAsJsonAsync($"/api/Inventory/mark-order-received", id);
+
+    // POST /api/Inventory/cancel-order
+    public async Task<HttpResponseMessage> CancelOrderAsync(int id)
+        => await _http.PostAsJsonAsync("/api/Inventory/cancel-order", id);
+
+    // POST /api/Inventory/create-supplier-order
+    public async Task<HttpResponseMessage> CreateSupplierOrderAsync(CreateSupplierOrderDto dto)
+        => await _http.PostAsJsonAsync("/api/Inventory/create-supplier-order", dto);
 }
 

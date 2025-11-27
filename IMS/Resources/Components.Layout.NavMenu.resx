@@ -132,6 +132,9 @@
   <data name="Stock" xml:space="preserve">
     <value>Stock</value>
   </data>
+  <data name="SupplierOrders" xml:space="preserve">
+    <value>Supplier Orders</value>
+  </data>
   <data name="Suppliers" xml:space="preserve">
     <value>Suppliers</value>
   </data>

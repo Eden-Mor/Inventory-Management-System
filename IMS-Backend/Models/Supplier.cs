@@ -11,4 +11,5 @@ public class Supplier
 
     // Navigation property
     public ICollection<Stock> Stocks { get; set; } = new List<Stock>();
+    public List<SupplierOrder> SupplierOrders { get; set; } = new();
 }

@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Purchase> Purchases { get; set; }
     public DbSet<ItemPurchase> ItemPurchases { get; set; }
     public DbSet<Log> Logs { get; set; }
+    public DbSet<SupplierOrder> SupplierOrders { get; set; }
+    public DbSet<SupplierOrderItem> SupplierOrderItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,5 +35,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(s => s.PurchaseItems)
             .HasForeignKey(pi => pi.StockId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<SupplierOrder>()
+            .HasOne(o => o.Supplier)
+            .WithMany(s => s.SupplierOrders)
+            .HasForeignKey(o => o.SupplierId);
+
+        modelBuilder.Entity<SupplierOrderItem>()
+            .HasOne(i => i.SupplierOrder)
+            .WithMany(o => o.Items)
+            .HasForeignKey(i => i.SupplierOrderId);
+
+        modelBuilder.Entity<SupplierOrderItem>()
+            .HasOne(i => i.Stock)
+            .WithMany()
+            .HasForeignKey(i => i.StockId);
     }
 }

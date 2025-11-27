@@ -35,9 +35,8 @@ public class InventoryController(AppDbContext context) : ControllerBase
         };
 
         context.Suppliers.Add(supplier);
-        await context.SaveChangesAsync();
+        await SaveAndLogAsync(LogType.Supplier_Added, $"Added new supplier: {sanitizedName}");
 
-        await CreateLog(LogType.Supplier_Added, $"Added new supplier: {sanitizedName}");
         return Ok(supplier);
     }
 
@@ -120,11 +119,10 @@ public class InventoryController(AppDbContext context) : ControllerBase
         };
 
         context.Stocks.Add(stock);
-        await context.SaveChangesAsync();
+        await SaveAndLogAsync(LogType.Stock_Added, $"Added new stock: {stock.Name}");
 
         model.StockId = stock.Id;
 
-        await CreateLog(LogType.Stock_Added, $"Added new stock: {stock.Name}");
         return Ok(model);
     }
 
@@ -139,9 +137,8 @@ public class InventoryController(AppDbContext context) : ControllerBase
             return NotFound("Stock not found.");
 
         context.Stocks.Remove(stock);
-        await context.SaveChangesAsync();
+        await SaveAndLogAsync(LogType.Removed_Item, $"Removed stock: {stock.Name}");
 
-        await CreateLog(LogType.Removed_Item, $"Removed stock: {stock.Name}");
         return Ok();
     }
 
@@ -167,9 +164,8 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (updated.Amount.HasValue)
             stock.Amount = updated.Amount.Value;
 
-        await context.SaveChangesAsync();
+        await SaveAndLogAsync(LogType.Edited_Item, $"Edited stock: {stock.Name}");
 
-        await CreateLog(LogType.Edited_Item, $"Edited stock: {stock.Name}");
         return Ok(stock);
     }
 
@@ -213,16 +209,138 @@ public class InventoryController(AppDbContext context) : ControllerBase
             inv.Amount -= item.Amount;
         }
 
-        await context.SaveChangesAsync();
+        await SaveAndLogAsync(LogType.Stock_Sold, $"Purchase created by {request.BuyerName} with {request.Items.Count} item(s).");
 
-        await CreateLog(LogType.Stock_Sold, $"Purchase created by {request.BuyerName} with {request.Items.Count} item(s).");
         return Ok(purchase);
     }
 
     // -------------------------------
+    // GET ORDERS
+    // -------------------------------
+    [HttpGet("get-orders")]
+    public async Task<IActionResult> GetOrders()
+    {
+        var orders = await context.SupplierOrders
+            .Include(o => o.Supplier)
+            .Include(o => o.Items)
+            .ThenInclude(i => i.Stock)
+            .Select(o => new SupplierOrderDto
+            {
+                Id = o.Id,
+                CreatedDate = o.CreatedDate,
+                Status = o.Status,
+                StatusChangeDate = o.StatusChangeDate,
+                Supplier = new SupplierDto
+                {
+                    Id = o.Supplier.Id,
+                    Name = o.Supplier.Name
+                },
+                Items = o.Items.Select(i => new StockDto
+                {
+                    StockId = i.Stock.Id,
+                    Name = i.Stock.Name,
+                    SerialNumber = i.Stock.SerialNumber,
+                    BuyPrice = i.Stock.BuyPrice,
+                    Amount = i.Amount
+                }).ToList()
+            })
+            .OrderBy(x => x.Status)
+            .ThenByDescending(x => x.StatusChangeDate ?? x.CreatedDate)
+            .ToListAsync();
+
+        return Ok(orders);
+    }
+
+    // -------------------------------
+    // CREATE SUPPLIER ORDER
+    // -------------------------------
+    [HttpPost("create-supplier-order")]
+    public async Task<IActionResult> CreateSupplierOrder(CreateSupplierOrderDto dto)
+    {
+        if (dto.Items == null || dto.Items.Count == 0)
+            return BadRequest("At least one item must be included in the order.");
+
+        if (dto.Items.Any(x=>x.Amount <= 0))
+            return BadRequest("All items must have an amount greater than zero.");
+
+        if (context.Suppliers.Find(dto.SupplierId) == null)
+            return BadRequest("Supplier does not exist.");
+
+        if (context.Stocks.Any(x => dto.Items.Select(i => i.StockId).Contains(x.Id)) == false)
+            return BadRequest("One or more stock items do not exist.");
+
+        var order = new SupplierOrder
+        {
+            CreatedDate = DateTime.UtcNow,
+            SupplierId = dto.SupplierId,
+            Status = OrderStatus.Pending,
+            Items = dto.Items.Select(x => new SupplierOrderItem
+            {
+                StockId = x.StockId,
+                Amount = x.Amount
+            }).ToList()
+        };
+
+        context.SupplierOrders.Add(order);
+        await SaveAndLogAsync(LogType.Supplier_Order_Added, $"Supplier Order created with {dto.Items.Count} item(s) to supplier {dto.SupplierId}.");
+
+        return Ok(order.Id);
+    }
+
+    // -------------------------------
+    // MARK ORDER RECEIVED
+    // -------------------------------
+    [HttpPost("mark-order-received")]
+    public async Task<IActionResult> MarkOrderReceived([FromBody] int id)
+    {
+        var order = await context.SupplierOrders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order == null)
+            return NotFound();
+
+        if (order.Status != OrderStatus.Pending)
+            return BadRequest("Only pending orders can be marked as received.");
+
+        order.SetStatus(OrderStatus.Received);
+
+        foreach (var item in order.Items)
+        {
+            var stock = await context.Stocks.FindAsync(item.StockId);
+            if (stock != null)
+                stock.Amount += item.Amount;
+        }
+
+        await SaveAndLogAsync(LogType.Supplier_Order_Received, $"Supplier Order Received from supplier {order.SupplierId} with order number {id}.");
+
+        return Ok();
+    }
+
+    // -------------------------------
+    // CANCEL ORDER
+    // -------------------------------
+    [HttpPost("cancel-order")]
+    public async Task<IActionResult> CancelOrder([FromBody] int id)
+    {
+        var order = await context.SupplierOrders.FindAsync(id);
+        if (order == null)
+            return NotFound();
+
+        if (order.Status != OrderStatus.Pending)
+            return BadRequest("Only pending orders can be canceled.");
+
+        order.SetStatus(OrderStatus.Canceled);
+        await SaveAndLogAsync(LogType.Supplier_Order_Canceled, $"Supplier Order Canceled from supplier {order.SupplierId} with order number {id}.");
+
+        return Ok();
+    }
+
+
+    // -------------------------------
     // PRIVATE LOG CREATOR
     // -------------------------------
-    private async Task CreateLog(LogType type, string desc)
+    private void CreateLog(LogType type, string desc)
     {
         context.Logs.Add(new Log
         {
@@ -230,6 +348,11 @@ public class InventoryController(AppDbContext context) : ControllerBase
             TypeEnum = type,
             Description = desc
         });
+    }
+
+    private async Task SaveAndLogAsync(LogType type, string desc)
+    {
+        CreateLog(type, desc);
         await context.SaveChangesAsync();
     }
 }

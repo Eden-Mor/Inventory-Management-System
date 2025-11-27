@@ -132,6 +132,9 @@
   <data name="Stock" xml:space="preserve">
     <value>מלאי</value>
   </data>
+  <data name="SupplierOrders" xml:space="preserve">
+    <value>הזמנות</value>
+  </data>
   <data name="Suppliers" xml:space="preserve">
     <value>ספקים</value>
   </data>

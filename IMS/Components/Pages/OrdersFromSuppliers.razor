@@ -1,0 +1,187 @@
+﻿@page "/supplier-orders"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>Supplier Orders</h3>
+
+<hr />
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <h4>Create New Supplier Order</h4>
+
+    <div>
+        <label>Supplier:</label>
+        <select @bind="NewOrder.SupplierId">
+            <option>Choose a supplier</option>
+            @foreach (var s in Suppliers)
+            {
+                <option value="@s.Id">@s.Name</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>Add Items:</label>
+        @foreach (var stock in Stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
+        {
+            <div>
+                @stock.Name
+                <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" />
+            </div>
+        }
+    </div>
+    
+    <br/>
+
+    <button class="btn btn-primary" @onclick="CreateOrder">Create Order</button>
+
+    <hr />
+
+    @foreach (var order in Orders)
+    {
+        <div class="card mb-2">
+            <div class="card-header" @onclick="() => Toggle(order.Id)">
+                <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToShortDateString()
+                <span class="badge
+                                    @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
+                                                                                                            order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
+                                                                                                            order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
+            @order.Status
+        </span>
+        @if (order.StatusChangeDate != null)
+                {
+                    @if (order.Status == IMS_Shared.Enums.OrderStatus.Canceled)
+                    {
+                        <span>
+                            Canceled on @order.StatusChangeDate
+                        </span>
+                    }
+                    else if (order.Status == IMS_Shared.Enums.OrderStatus.Received)
+                    {
+                        <span>
+                            Received on @order.StatusChangeDate
+                        </span>
+                    }
+                }
+            </div>
+
+            @if (ExpandedOrders.Contains(order.Id))
+            {
+                <div class="card-body">
+
+                    @if (order.Status == IMS_Shared.Enums.OrderStatus.Pending)
+                    {
+                        <button class="btn btn-success btn-sm" @onclick="() => MarkOrderReceived(order.Id)">
+                            Mark Entire Order Received
+                        </button>
+
+                        <button class="btn btn-danger btn-sm ms-2" @onclick="() => CancelOrder(order.Id)">
+                            Cancel Order
+                        </button>
+                    }
+
+                    <table class="table mt-3">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in order.Items)
+                            {
+                                <tr>
+                                    <td>@item.Name</td>
+                                    <td>@item.Amount</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+
+    List<SupplierOrderDto> Orders = new();
+    List<SupplierDto> Suppliers = new();
+    List<StockDto> Stocks = new();
+    Dictionary<int, int> NewOrderItems = new();
+
+    CreateSupplierOrderDto NewOrder = new();
+
+    HashSet<int> ExpandedOrders = new();
+
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        Orders = await ApiClient.GetSupplierOrdersAsync() ?? [];
+        Suppliers = await ApiClient.GetSuppliersAsync() ?? [];
+        Stocks = await ApiClient.GetAllStocksAsync() ?? [];
+        ResetNewOrderItems();
+        isLoading = false;
+    }
+
+    void ResetNewOrderItems()
+    {
+        NewOrderItems = Stocks.ToDictionary(s => s.StockId ?? 0, s => 0);
+    }
+
+    void Toggle(int id)
+    {
+        if (ExpandedOrders.Contains(id))
+            ExpandedOrders.Remove(id);
+        else
+            ExpandedOrders.Add(id);
+    }
+
+    async Task MarkOrderReceived(int orderId)
+    {
+        await ApiClient.MarkOrderReceivedAsync(orderId);
+        await Load();
+    }
+
+    async Task CancelOrder(int id)
+    {
+        await ApiClient.CancelOrderAsync(id);
+        await Load();
+    }
+
+    async Task CreateOrder()
+    {
+        NewOrder.Items = NewOrderItems
+            .Where(x => x.Value > 0)
+            .Select(x => new OrderItemDto
+            {
+                StockId = x.Key,
+                Amount = x.Value
+            })
+            .ToList();
+
+        await ApiClient.CreateSupplierOrderAsync(NewOrder);
+
+        ResetNewOrderItems();
+
+        await Load();
+    }
+
+    async Task Load()
+    {
+        Orders = await ApiClient.GetSupplierOrdersAsync() ?? [];
+        StateHasChanged();
+    }
+
+}

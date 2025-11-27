@@ -9,4 +9,7 @@ public enum LogType
     Edited_Item = 4,
     Removed_Item = 5,
     Supplier_Added = 6,
+    Supplier_Order_Added = 7,
+    Supplier_Order_Received = 8,
+    Supplier_Order_Canceled = 9,
 }
