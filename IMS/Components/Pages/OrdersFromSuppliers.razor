@@ -31,16 +31,28 @@ else
 
     <div>
         <label>Add Items:</label>
-        @foreach (var stock in Stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
-        {
-            <div>
-                @stock.Name
-                <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" />
-            </div>
-        }
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var stock in Stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
+                {
+                    <tr>
+                        <td>@stock.Name</td>
+                        <td> <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
     </div>
-    
-    <br/>
+
+    <br />
 
     <button class="btn btn-primary" @onclick="CreateOrder">Create Order</button>
 
@@ -52,9 +64,9 @@ else
             <div class="card-header" @onclick="() => Toggle(order.Id)">
                 <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToShortDateString()
                 <span class="badge
-                                    @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
-                                                                                                            order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
-                                                                                                            order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
+                                            @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
+                                                                                                                                  order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
+                                                                                                                                  order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
             @order.Status
         </span>
         @if (order.StatusChangeDate != null)
