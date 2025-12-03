@@ -62,7 +62,7 @@ else
     {
         <div class="card mb-2">
             <div class="card-header" @onclick="() => Toggle(order.Id)">
-                <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToShortDateString()
+                <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToLocalTime().ToShortDateString()
                 <span class="badge
                                             @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
                                                                                                                                   order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
@@ -74,13 +74,13 @@ else
                     @if (order.Status == IMS_Shared.Enums.OrderStatus.Canceled)
                     {
                         <span>
-                            Canceled on @order.StatusChangeDate
+                            Canceled on @order.StatusChangeDate?.ToLocalTime()
                         </span>
                     }
                     else if (order.Status == IMS_Shared.Enums.OrderStatus.Received)
                     {
                         <span>
-                            Received on @order.StatusChangeDate
+                            Received on @order.StatusChangeDate?.ToLocalTime()
                         </span>
                     }
                 }
