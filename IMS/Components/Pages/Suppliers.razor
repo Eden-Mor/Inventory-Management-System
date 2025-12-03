@@ -75,7 +75,9 @@ else
         await ApiClient.AddSupplierAsync(supplierModel);
         //TODO: If you get an error from the add supplier section, report it.
         //Such as, the name already existings.
-     
+
+        supplierModel = new();
+
         await GetSuppliers();
     }
 
