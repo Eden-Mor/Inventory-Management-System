@@ -20,7 +20,7 @@ public class Stock
     public decimal SellPrice { get; set; }
 
     [Range(0, int.MaxValue)]
-    public int Amount { get; set; }
+    public int Amount { get; set; } = 0;
 
     // Foreign key
     public int SupplierId { get; set; }

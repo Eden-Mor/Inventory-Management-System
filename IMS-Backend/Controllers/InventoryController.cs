@@ -3,6 +3,8 @@ using IMS_Shared.Dtos;
 using IMS_Shared.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace IMS_Backend.Controllers;
 
@@ -119,7 +121,16 @@ public class InventoryController(AppDbContext context) : ControllerBase
         };
 
         context.Stocks.Add(stock);
-        await SaveAndLogAsync(LogType.Stock_Added, $"Added new stock: {stock.Name}");
+
+        StringBuilder sb = new();
+        sb.AppendLine($"Added new stock: {stock.Name}");
+        sb.AppendLine($" - Serial Number: {stock.SerialNumber}");
+        sb.AppendLine($" - Buy Price: {stock.BuyPrice}");
+        sb.AppendLine($" - Sell Price: {stock.SellPrice}");
+        sb.AppendLine($" - Supplier ID: {stock.SupplierId}");
+        sb.AppendLine($" - Initial Amount: {stock.Amount}");
+
+        await SaveAndLogAsync(LogType.Stock_Added, sb.ToString());
 
         model.StockId = stock.Id;
 
@@ -137,7 +148,16 @@ public class InventoryController(AppDbContext context) : ControllerBase
             return NotFound("Stock not found.");
 
         context.Stocks.Remove(stock);
-        await SaveAndLogAsync(LogType.Removed_Item, $"Removed stock: {stock.Name}");
+
+        StringBuilder sb = new();
+        sb.AppendLine($"Removed stock: {stock.Name}");
+        sb.AppendLine($" - Serial Number: {stock.SerialNumber}");
+        sb.AppendLine($" - Buy Price: {stock.BuyPrice}");
+        sb.AppendLine($" - Sell Price: {stock.SellPrice}");
+        sb.AppendLine($" - Supplier ID: {stock.SupplierId}");
+        sb.AppendLine($" - Amount: {stock.Amount}");
+
+        await SaveAndLogAsync(LogType.Removed_Item, sb.ToString());
 
         return Ok();
     }
@@ -152,19 +172,22 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (stock == null)
             return NotFound("Stock not found.");
 
-        stock.Name = updated.Name;
-        stock.SerialNumber = updated.SerialNumber;
-        stock.BuyPrice = updated.BuyPrice;
-        stock.SellPrice = updated.SellPrice;
-        stock.SupplierId = updated.SupplierId;
-
         if (updated.Amount.HasValue && updated.Amount.Value < 0)
             return BadRequest("Amount cannot be set to a negative number.");
 
-        if (updated.Amount.HasValue)
-            stock.Amount = updated.Amount.Value;
+        StringBuilder sb = new();
+        sb.AppendLine($"Edited stock: {stock.Name}");
 
-        await SaveAndLogAsync(LogType.Edited_Item, $"Edited stock: {stock.Name}");
+        if (updated.Amount.HasValue)
+            stock.Amount = LogIfChanged(sb, stock.Amount, updated.Amount.Value);
+
+        stock.Name = LogIfChanged(sb, stock.Name, updated.Name);
+        stock.SerialNumber = LogIfChanged(sb, stock.SerialNumber, updated.SerialNumber);
+        stock.BuyPrice = LogIfChanged(sb, stock.BuyPrice, updated.BuyPrice);
+        stock.SellPrice = LogIfChanged(sb, stock.SellPrice, updated.SellPrice);
+        stock.SupplierId = LogIfChanged(sb, stock.SupplierId, updated.SupplierId);
+
+        await SaveAndLogAsync(LogType.Edited_Item, sb.ToString());
 
         return Ok(stock);
     }
@@ -182,18 +205,25 @@ public class InventoryController(AppDbContext context) : ControllerBase
             return BadRequest("At least one item must be included in the purchase.");
 
         var seller = await context.Sellers.FindAsync(request.SellerId);
-        if (seller == null)
+        if (seller is null)
             return BadRequest("Seller does not exist.");
-
         if (seller.Status != SellerStatus.Active)
             return BadRequest("Seller is not active.");
 
-        // Check all stock exists and has enough inventory
+        // Fetch and track stocks
+        var stockIds = request.Items.Select(i => i.StockId).Distinct().ToList();
+        var stocks = await context.Stocks
+            .Where(s => stockIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id);
+
+        // Validate stock availability
         foreach (var item in request.Items)
         {
-            var stock = await context.Stocks.FirstOrDefaultAsync(i => i.Id == item.StockId);
-            if (stock == null || stock.Amount < item.Amount)
-                return BadRequest($"Not enough stock available for StockId {item.StockId}.");
+            if (!stocks.TryGetValue(item.StockId, out var stock))
+                return BadRequest($"Stock ID {item.StockId} does not exist.");
+
+            if (stock.Amount < item.Amount)
+                return BadRequest($"Not enough stock available for {stock.Name} (currently {stock.Amount}, requested {item.Amount}).");
         }
 
         // Create purchase
@@ -201,11 +231,11 @@ public class InventoryController(AppDbContext context) : ControllerBase
         {
             SellerId = request.SellerId,
             BuyerName = request.BuyerName,
-            Items = [.. request.Items.Select(i => new ItemPurchase
+            Items = request.Items.Select(i => new ItemPurchase
             {
                 StockId = i.StockId,
                 Amount = i.Amount
-            })]
+            }).ToList()
         };
 
         context.Purchases.Add(purchase);
@@ -213,11 +243,16 @@ public class InventoryController(AppDbContext context) : ControllerBase
         // Deduct inventory
         foreach (var item in request.Items)
         {
-            var inv = await context.Stocks.FirstAsync(i => i.Id == item.StockId);
-            inv.Amount -= item.Amount;
+            var stock = stocks[item.StockId];
+            stock.Amount -= item.Amount;
         }
 
-        await SaveAndLogAsync(LogType.Stock_Sold, $"Purchase created by {seller.Name} for {request.BuyerName} with {request.Items.Count} item(s).");
+        var sb = new StringBuilder();
+        sb.AppendLine($"Created purchase for buyer: {request.BuyerName}, seller: {seller.Name}");
+        foreach (var s in request.Items)
+            sb.AppendLine($" - Stock: {stocks[s.StockId]?.Name ?? "UNKNOWN STOCK"} (ID: {s.StockId}), Amount: {s.Amount}");
+
+        await SaveAndLogAsync(LogType.Stock_Sold, sb.ToString());
 
         return Ok(purchase);
     }
@@ -271,7 +306,8 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (dto.Items.Any(x => x.Amount <= 0))
             return BadRequest("All items must have an amount greater than zero.");
 
-        if (context.Suppliers.Find(dto.SupplierId) == null)
+        var supplier = context.Suppliers.Find(dto.SupplierId);
+        if (supplier == null)
             return BadRequest("Supplier does not exist.");
 
         if (context.Stocks.Any(x => dto.Items.Select(i => i.StockId).Contains(x.Id)) == false)
@@ -290,7 +326,13 @@ public class InventoryController(AppDbContext context) : ControllerBase
         };
 
         context.SupplierOrders.Add(order);
-        await SaveAndLogAsync(LogType.Supplier_Order_Added, $"Supplier Order created with {dto.Items.Count} item(s) to supplier {dto.SupplierId}.");
+
+        StringBuilder sb = new();
+        sb.AppendLine($"Created Supplier Order to {supplier.Name} (ID: {dto.SupplierId}) with the following items:");
+        foreach (var item in dto.Items)
+            sb.AppendLine($" - Stock ID: {item.StockId}, Amount: {item.Amount}");
+
+        await SaveAndLogAsync(LogType.Supplier_Order_Added, sb.ToString());
 
         return Ok(order.Id);
     }
@@ -303,6 +345,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
     {
         var order = await context.SupplierOrders
             .Include(o => o.Items)
+            .Include(o => o.Supplier)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
@@ -320,7 +363,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
                 stock.Amount += item.Amount;
         }
 
-        await SaveAndLogAsync(LogType.Supplier_Order_Received, $"Supplier Order Received from supplier {order.SupplierId} with order number {id}.");
+        await SaveAndLogAsync(LogType.Supplier_Order_Received, $"Supplier Order Received from supplier {order.Supplier.Name} (ID: {order.SupplierId}) with order number {id}.");
 
         return Ok();
     }
@@ -331,7 +374,10 @@ public class InventoryController(AppDbContext context) : ControllerBase
     [HttpPost("cancel-order")]
     public async Task<IActionResult> CancelOrder([FromBody] int id)
     {
-        var order = await context.SupplierOrders.FindAsync(id);
+        var order = await context.SupplierOrders
+            .Include(o => o.Supplier)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
         if (order == null)
             return NotFound();
 
@@ -339,7 +385,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
             return BadRequest("Only pending orders can be canceled.");
 
         order.SetStatus(OrderStatus.Canceled);
-        await SaveAndLogAsync(LogType.Supplier_Order_Canceled, $"Supplier Order Canceled from supplier {order.SupplierId} with order number {id}.");
+        await SaveAndLogAsync(LogType.Supplier_Order_Canceled, $"Supplier Order Canceled from supplier {order.Supplier.Name} (ID: {order.SupplierId}) with order number {id}.");
 
         return Ok();
     }
@@ -361,7 +407,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         return Ok(sellers);
     }
-    
+
     // -------------------------------
     // GET ACTIVE SELLERS
     // -------------------------------
@@ -440,5 +486,18 @@ public class InventoryController(AppDbContext context) : ControllerBase
     {
         CreateLog(type, desc);
         await context.SaveChangesAsync();
+    }
+
+    private static T LogIfChanged<T>(
+        StringBuilder sb,
+        T currentValue,
+        T newValue,
+        [CallerArgumentExpression(nameof(currentValue))] string propertyName = null)
+    {
+        bool changed = !Equals(currentValue, newValue);
+        if (changed)
+            sb.AppendLine($" - {propertyName?.Split('.').Last() ?? "UNKNOWN PROPERTY"} changed from: {currentValue} to {newValue}");
+
+        return newValue;
     }
 }
