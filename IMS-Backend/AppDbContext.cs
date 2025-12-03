@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Log> Logs { get; set; }
     public DbSet<SupplierOrder> SupplierOrders { get; set; }
     public DbSet<SupplierOrderItem> SupplierOrderItems { get; set; }
+    public DbSet<Seller> Sellers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,9 +47,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(o => o.Items)
             .HasForeignKey(i => i.SupplierOrderId);
 
-        modelBuilder.Entity<SupplierOrderItem>()
-            .HasOne(i => i.Stock)
-            .WithMany()
-            .HasForeignKey(i => i.StockId);
+        modelBuilder.Entity<Seller>()
+            .HasMany(s => s.Sales)
+            .WithOne(p => p.Seller)
+            .HasForeignKey(p => p.SellerId);
     }
 }

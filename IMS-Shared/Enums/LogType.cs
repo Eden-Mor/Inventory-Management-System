@@ -12,4 +12,6 @@ public enum LogType
     Supplier_Order_Added = 7,
     Supplier_Order_Received = 8,
     Supplier_Order_Canceled = 9,
+    Seller_Added = 10,
+    Seller_Status_Changed = 11,
 }

@@ -60,5 +60,21 @@ public class InventoryApiClient
     // POST /api/Inventory/create-supplier-order
     public async Task<HttpResponseMessage> CreateSupplierOrderAsync(CreateSupplierOrderDto dto)
         => await _http.PostAsJsonAsync("/api/Inventory/create-supplier-order", dto);
+
+    // GET /api/Inventory/sellers
+    public async Task<List<SellerDto>?> GetSellersAsync()
+        => await _http.GetFromJsonAsync<List<SellerDto>>("/api/Inventory/sellers");
+
+    // GET /api/Inventory/active-sellers
+    public async Task<List<SellerDto>?> GetActiveSellersAsync()
+        => await _http.GetFromJsonAsync<List<SellerDto>>("/api/Inventory/active-sellers");
+
+    // POST /api/Inventory/add-seller
+    public async Task<HttpResponseMessage> AddSellerAsync(SellerDto dto)
+        => await _http.PostAsJsonAsync("/api/Inventory/add-seller", dto);
+
+    // POST /api/Inventory/set-seller-status
+    public async Task<HttpResponseMessage> ChangeSellerStatusAsync(SellerDto dto)
+        => await _http.PostAsJsonAsync("/api/Inventory/set-seller-status", dto);
 }
 

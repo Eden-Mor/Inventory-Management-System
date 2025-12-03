@@ -2,6 +2,7 @@
 
 public class PurchaseRequestDto
 {
+    public int SellerId { get; set; }
     public string BuyerName { get; set; } = string.Empty;
     public List<PurchaseItemDto> Items { get; set; } = new();
 }

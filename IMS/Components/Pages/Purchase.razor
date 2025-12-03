@@ -23,6 +23,18 @@ else
         <InputText @bind-Value="buyerName" class="form-control" placeholder="@L["EnterBuyerName"]" />
     </div>
 
+    <select class="form-select d-inline w-auto" @bind="sellerId">
+        <option value="-1">
+            Select a seller
+        </option>
+        @foreach (var seller in sellerList)
+        {
+            <option value="@seller.Id">
+                @seller.Name
+            </option>
+        }
+    </select>
+
     <hr />
 
     <h4>@L["AvailableStock"]</h4>
@@ -93,20 +105,29 @@ else
 @code {
     private string buyerName = string.Empty;
     private List<StockDto> stockList = new();
+    private List<SellerDto> sellerList = new();
     private Dictionary<StockDto, int> cart = new();
+    private int sellerId = -1;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         isLoading = true;
         await LoadStocksAsync();
+        await LoadSellersAsync();
         isLoading = false;
     }
 
     private async Task LoadStocksAsync()
     {
-        //TODO: Make an exception
+        //TODO: Handle exception
         stockList = await ApiClient.GetAllStocksAsync() ?? new();
+    }
+
+    private async Task LoadSellersAsync()
+    {
+        //TODO: Handle exception
+        sellerList = await ApiClient.GetActiveSellersAsync() ?? new();
     }
 
 
@@ -151,10 +172,16 @@ else
             return;
         }
 
+        if (sellerId == -1)
+        {
+            Console.WriteLine("Select a seller.");
+            return;
+        }
 
         //TODO: CHECK IF SUCCESSFUL
         await ApiClient.CreatePurchaseAsync(new PurchaseRequestDto
         {
+            SellerId = sellerId,
             BuyerName = buyerName,
             Items = cart.Select(c => new PurchaseItemDto
             {
@@ -167,6 +194,7 @@ else
 
         cart.Clear();
         buyerName = string.Empty;
+        sellerId = -1;
 
         await LoadStocksAsync();
     }

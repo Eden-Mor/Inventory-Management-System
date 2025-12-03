@@ -129,6 +129,9 @@
   <data name="Purchase" xml:space="preserve">
     <value>רכישה</value>
   </data>
+  <data name="Sellers" xml:space="preserve">
+    <value>מוכרים</value>
+  </data>
   <data name="Stock" xml:space="preserve">
     <value>מלאי</value>
   </data>

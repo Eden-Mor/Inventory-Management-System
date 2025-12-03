@@ -1,0 +1,128 @@
+﻿@page "/sellers"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@using IMS_Shared.Enums
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<h3>Seller Management</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card p-3 mb-4">
+        <h5>Add New Seller</h5>
+        <EditForm Model="sellerModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label>Name:</label>
+                <InputText class="form-control" @bind-Value="sellerModel.Name" />
+            </div>
+
+            <button class="btn btn-primary me-2" type="submit">
+                Add Seller
+            </button>
+
+        </EditForm>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Change Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in sellers)
+            {
+                <tr>
+                    <td>@s.Id</td>
+                    <td>@s.Name</td>
+                    <td>@s.Status</td>
+                    <td>
+                        <select class="form-select d-inline w-auto" @onchange="@(e => OnStatusChanged(s.Id, e.Value?.ToString()))">
+                            @foreach (var status in Enum.GetValues<SellerStatus>())
+                            {
+                                <option value="@status"
+                                        selected="@(GetSelectedStatus(s.Id) == status)">
+                                    @status
+                                </option>
+                            }
+                        </select>
+
+                        <button class="btn btn-sm btn-success ms-2"
+                                @onclick="() => ChangeStatus(s.Id)">
+                            Save
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<SellerDto> sellers = new();
+    private SellerDto sellerModel = new();
+    private Dictionary<int, SellerStatus> pendingStatus = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await GetSellers();
+        isLoading = false;
+    }
+
+    private async Task GetSellers()
+    {
+        sellers = await ApiClient.GetSellersAsync() ?? new();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await ApiClient.AddSellerAsync(sellerModel);
+        sellerModel = new();
+        await GetSellers();
+    }
+
+    private void OnStatusChanged(int sellerId, string? newValue)
+    {
+        if (Enum.TryParse<SellerStatus>(newValue, out var parsed))
+            pendingStatus[sellerId] = parsed;
+    }
+
+    private SellerStatus GetSelectedStatus(int sellerId)
+    {
+        if (pendingStatus.TryGetValue(sellerId, out var temp))
+            return temp;
+
+        return sellers.First(x => x.Id == sellerId).Status;
+    }
+
+    private async Task ChangeStatus(int sellerId)
+    {
+        if (!pendingStatus.TryGetValue(sellerId, out var newStatus))
+            return;
+
+        await ApiClient.ChangeSellerStatusAsync(new SellerDto
+        {
+            Id = sellerId,
+            Status = newStatus
+        });
+
+        pendingStatus.Remove(sellerId);
+
+        await GetSellers();
+    }
+}

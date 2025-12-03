@@ -11,4 +11,7 @@ public class Purchase
     public string BuyerName { get; set; } = string.Empty;
 
     public ICollection<ItemPurchase> Items { get; set; } = [];
+
+    public int SellerId { get; set; }
+    public Seller Seller { get; set; }
 }

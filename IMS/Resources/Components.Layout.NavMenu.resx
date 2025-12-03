@@ -129,6 +129,9 @@
   <data name="Purchase" xml:space="preserve">
     <value>Purchase</value>
   </data>
+  <data name="Sellers" xml:space="preserve">
+    <value>Sellers</value>
+  </data>
   <data name="Stock" xml:space="preserve">
     <value>Stock</value>
   </data>

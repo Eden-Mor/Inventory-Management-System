@@ -181,6 +181,13 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (request.Items == null || request.Items.Count == 0)
             return BadRequest("At least one item must be included in the purchase.");
 
+        var seller = await context.Sellers.FindAsync(request.SellerId);
+        if (seller == null)
+            return BadRequest("Seller does not exist.");
+
+        if (seller.Status != SellerStatus.Active)
+            return BadRequest("Seller is not active.");
+
         // Check all stock exists and has enough inventory
         foreach (var item in request.Items)
         {
@@ -192,6 +199,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
         // Create purchase
         var purchase = new Purchase
         {
+            SellerId = request.SellerId,
             BuyerName = request.BuyerName,
             Items = [.. request.Items.Select(i => new ItemPurchase
             {
@@ -209,7 +217,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
             inv.Amount -= item.Amount;
         }
 
-        await SaveAndLogAsync(LogType.Stock_Sold, $"Purchase created by {request.BuyerName} with {request.Items.Count} item(s).");
+        await SaveAndLogAsync(LogType.Stock_Sold, $"Purchase created by {seller.Name} for {request.BuyerName} with {request.Items.Count} item(s).");
 
         return Ok(purchase);
     }
@@ -260,7 +268,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (dto.Items == null || dto.Items.Count == 0)
             return BadRequest("At least one item must be included in the order.");
 
-        if (dto.Items.Any(x=>x.Amount <= 0))
+        if (dto.Items.Any(x => x.Amount <= 0))
             return BadRequest("All items must have an amount greater than zero.");
 
         if (context.Suppliers.Find(dto.SupplierId) == null)
@@ -332,6 +340,84 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         order.SetStatus(OrderStatus.Canceled);
         await SaveAndLogAsync(LogType.Supplier_Order_Canceled, $"Supplier Order Canceled from supplier {order.SupplierId} with order number {id}.");
+
+        return Ok();
+    }
+
+    // -------------------------------
+    // GET SELLERS
+    // -------------------------------
+    [HttpGet("sellers")]
+    public async Task<IActionResult> GetSellers()
+    {
+        var sellers = await context.Sellers
+            .Select(x => new SellerDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Status = x.Status
+            })
+            .ToListAsync();
+
+        return Ok(sellers);
+    }
+    
+    // -------------------------------
+    // GET ACTIVE SELLERS
+    // -------------------------------
+    [HttpGet("active-sellers")]
+    public async Task<IActionResult> GetActiveSellers()
+    {
+        var sellers = await context.Sellers
+            .Where(seller => seller.Status == SellerStatus.Active)
+            .Select(x => new SellerDto
+            {
+                Id = x.Id,
+                Name = x.Name
+            })
+            .ToListAsync();
+
+        return Ok(sellers);
+    }
+
+    // -------------------------------
+    // ADD SELLER
+    // -------------------------------
+    [HttpPost("add-seller")]
+    public async Task<IActionResult> AddSeller(SellerDto seller)
+    {
+        context.Sellers.Add(new Seller
+        {
+            Name = seller.Name,
+            Status = SellerStatus.Active
+        });
+
+        await SaveAndLogAsync(LogType.Seller_Added, $"Seller \"{seller.Name}\" has been added with status {seller.Status}.");
+
+        return Ok();
+    }
+
+
+    // -------------------------------
+    // SELLER STATUS CHANGE
+    // -------------------------------
+    [HttpPost("set-seller-status")]
+    public async Task<IActionResult> SetSellerStatus(SellerDto seller)
+    {
+        if (seller.Id <= 0)
+            return BadRequest("Invalid seller ID.");
+
+        var existingSeller = await context.Sellers.FindAsync(seller.Id);
+        if (existingSeller == null)
+            return NotFound("Seller not found.");
+
+        if (existingSeller.Status == seller.Status)
+            return BadRequest("Seller already has the specified status.");
+
+        var currentStatus = existingSeller.Status;
+        existingSeller.Status = seller.Status;
+
+        await SaveAndLogAsync(LogType.Seller_Status_Changed, $"Seller \"{existingSeller.Name}\" status has been changed from {currentStatus} to {seller.Status}.");
 
         return Ok();
     }
