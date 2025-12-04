@@ -11,7 +11,14 @@
 <h3>@L["Title"]</h3>
 
 
-@if (isLoading)
+@if (isLoading == null)
+{
+    <p>The page had problems loading.</p>
+    <p>Error: @errorMessage</p>
+    <br />
+    <p>Please reload the page.</p>
+}
+else if (isLoading.Value)
 {
     <p>@L["Loading"]</p>
 }
@@ -108,26 +115,44 @@ else
     private List<SellerDto> sellerList = new();
     private Dictionary<StockDto, int> cart = new();
     private int sellerId = -1;
-    private bool isLoading = true;
+    private bool? isLoading = true;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-        await LoadStocksAsync();
-        await LoadSellersAsync();
-        isLoading = false;
+        var stockTask = LoadStocksAsync();
+        var sellerTask = LoadSellersAsync();
+
+        await Task.WhenAll(stockTask, sellerTask);
+
+        if (isLoading != null)
+            isLoading = false;
     }
 
     private async Task LoadStocksAsync()
     {
-        //TODO: Handle exception
-        stockList = await ApiClient.GetAllStocksAsync() ?? new();
+        var result = await ApiClient.GetAllStocksAsync();
+        if (!result.Success)
+        {
+            errorMessage = result.Error ?? "Failed to load stocks.";
+            isLoading = null;
+            return;
+        }
+
+        stockList = result.Data ?? new();
     }
 
     private async Task LoadSellersAsync()
     {
-        //TODO: Handle exception
-        sellerList = await ApiClient.GetActiveSellersAsync() ?? new();
+        var result = await ApiClient.GetActiveSellersAsync();
+        if (!result.Success)
+        {
+            errorMessage = result.Error ?? "Failed to load sellers.";
+            isLoading = null;
+            return;
+        }
+
+        sellerList = result.Data ?? new();
     }
 
 
@@ -178,8 +203,7 @@ else
             return;
         }
 
-        //TODO: CHECK IF SUCCESSFUL
-        await ApiClient.CreatePurchaseAsync(new PurchaseRequestDto
+        var result = await ApiClient.CreatePurchaseAsync(new PurchaseRequestDto
         {
             SellerId = sellerId,
             BuyerName = buyerName,
@@ -190,6 +214,12 @@ else
             }).ToList()
         });
 
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            return;
+        }
+
         //TODO: PRINT LIST OF PURCHASED ITEMS
 
         cart.Clear();
@@ -198,4 +228,6 @@ else
 
         await LoadStocksAsync();
     }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
 }

@@ -8,7 +8,14 @@
 
 <h3>Suppliers Management</h3>
 
-@if (isLoading)
+@if (isLoading == null)
+{
+    <p>The page had problems loading.</p>
+    <p>Error: @errorMessage</p>
+    <br />
+    <p>Please reload the page.</p>
+}
+else if (isLoading.Value)
 {
     <p>Loading...</p>
 }
@@ -54,31 +61,44 @@ else
 @code {
     private Dictionary<int, string> suppliers = new();
     private SupplierDto supplierModel = new();
-    private bool isLoading = true;
+    private bool? isLoading = true;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-        await GetSuppliers();
-        isLoading = false;
+        await GetSuppliersAsync();
+
+        if (isLoading != null)
+            isLoading = false;
     }
 
-    private async Task GetSuppliers()
+    private async Task GetSuppliersAsync()
     {
-        //TODO: Make an exception
-        var suppliersList = await ApiClient.GetSuppliersAsync() ?? new();
-        suppliers = suppliersList.ToDictionary(s => s.Id, s => s.Name);
+        var result = await ApiClient.GetSuppliersAsync() ?? new();
+
+        if (!result.Success)
+        {
+            errorMessage = result.Error;
+            isLoading = null;
+            return;
+        }
+
+        suppliers = result.Data?.ToDictionary(s => s.Id, s => s.Name) ?? new();
     }
 
     private async Task HandleValidSubmit()
     {
-        await ApiClient.AddSupplierAsync(supplierModel);
-        //TODO: If you get an error from the add supplier section, report it.
-        //Such as, the name already existings.
+        var result = await ApiClient.AddSupplierAsync(supplierModel);
+        
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error adding supplier: {result.Error}");
+            return;
+        }
 
         supplierModel = new();
 
-        await GetSuppliers();
+        await GetSuppliersAsync();
     }
 
     [Inject] IJSRuntime JS { get; set; } = default!;

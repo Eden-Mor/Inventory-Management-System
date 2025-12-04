@@ -39,7 +39,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
         context.Suppliers.Add(supplier);
         await SaveAndLogAsync(LogType.Supplier_Added, $"Added new supplier: {sanitizedName}");
 
-        return Ok(supplier);
+        return Ok(supplier.Id);
     }
 
     // -------------------------------
@@ -132,9 +132,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Stock_Added, sb.ToString());
 
-        model.StockId = stock.Id;
-
-        return Ok(model);
+        return Ok(stock.Id);
     }
 
     // -------------------------------
@@ -159,7 +157,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Removed_Item, sb.ToString());
 
-        return Ok();
+        return Ok(id);
     }
 
     // -------------------------------
@@ -189,7 +187,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Edited_Item, sb.ToString());
 
-        return Ok(stock);
+        return Ok(id);
     }
 
     // -------------------------------
@@ -207,6 +205,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
         var seller = await context.Sellers.FindAsync(request.SellerId);
         if (seller is null)
             return BadRequest("Seller does not exist.");
+
         if (seller.Status != SellerStatus.Active)
             return BadRequest("Seller is not active.");
 
@@ -223,7 +222,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
                 return BadRequest($"Stock ID {item.StockId} does not exist.");
 
             if (stock.Amount < item.Amount)
-                return BadRequest($"Not enough stock available for {stock.Name} (currently {stock.Amount}, requested {item.Amount}).");
+                return BadRequest($"Not enough stock available for {stock.Name} (currently {stock.Amount}, requested {item.Amount}).\nPlease reload the page.");
         }
 
         // Create purchase
@@ -254,7 +253,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Stock_Sold, sb.ToString());
 
-        return Ok(purchase);
+        return Ok(purchase.Id);
     }
 
     // -------------------------------
@@ -365,7 +364,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Supplier_Order_Received, $"Supplier Order Received from supplier {order.Supplier.Name} (ID: {order.SupplierId}) with order number {id}.");
 
-        return Ok();
+        return Ok(id);
     }
 
     // -------------------------------
@@ -387,7 +386,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
         order.SetStatus(OrderStatus.Canceled);
         await SaveAndLogAsync(LogType.Supplier_Order_Canceled, $"Supplier Order Canceled from supplier {order.Supplier.Name} (ID: {order.SupplierId}) with order number {id}.");
 
-        return Ok();
+        return Ok(id);
     }
 
     // -------------------------------
@@ -440,7 +439,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Seller_Added, $"Seller \"{seller.Name}\" has been added with status {seller.Status}.");
 
-        return Ok();
+        return Ok(seller.Id);
     }
 
 
@@ -465,7 +464,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         await SaveAndLogAsync(LogType.Seller_Status_Changed, $"Seller \"{existingSeller.Name}\" status has been changed from {currentStatus} to {seller.Status}.");
 
-        return Ok();
+        return Ok(seller.Id);
     }
 
 

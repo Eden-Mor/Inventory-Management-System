@@ -10,7 +10,14 @@
 
 <hr />
 
-@if (isLoading)
+@if (isLoading == null)
+{
+    <p>The page had problems loading.</p>
+    <p>Error: @errorMessage</p>
+    <br />
+    <p>Please reload the page.</p>
+}
+else if (isLoading.Value)
 {
     <p>Loading...</p>
 }
@@ -22,35 +29,44 @@ else
         <label>Supplier:</label>
         <select @bind="NewOrder.SupplierId">
             <option>Choose a supplier</option>
-            @foreach (var s in Suppliers)
+            @foreach (var s in suppliers)
             {
                 <option value="@s.Id">@s.Name</option>
             }
         </select>
     </div>
 
-    <div>
-        <label>Add Items:</label>
+    <br />
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var stock in Stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
-                {
+    if (stocks.Any(x => x.SupplierId == NewOrder.SupplierId))
+    {
+        <div>
+            <label>Add Items:</label>
+
+            <table class="table table-striped">
+                <thead>
                     <tr>
-                        <td>@stock.Name</td>
-                        <td> <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" /></td>
+                        <th>Item</th>
+                        <th>Amount</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var stock in stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
+                    {
+                        <tr>
+                            <td>@stock.Name</td>
+                            <td> <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
 
-    </div>
+        </div>
+    }
+    else
+    {
+        <p>No items exist for supplier @suppliers.FirstOrDefault(x => x.Id == NewOrder.SupplierId)?.Name.</p>
+    }
 
     <br />
 
@@ -58,15 +74,15 @@ else
 
     <hr />
 
-    @foreach (var order in Orders)
+    @foreach (var order in orders)
     {
         <div class="card mb-2">
             <div class="card-header" @onclick="() => Toggle(order.Id)">
                 <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToLocalTime().ToShortDateString()
                 <span class="badge
-                                            @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
-                                                                                                                                  order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
-                                                                                                                                  order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
+                                                            @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
+                                                                                                                                                                              order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
+                                                                                                                                                                              order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
             @order.Status
         </span>
         @if (order.StatusChangeDate != null)
@@ -126,30 +142,72 @@ else
 
 @code {
 
-    List<SupplierOrderDto> Orders = new();
-    List<SupplierDto> Suppliers = new();
-    List<StockDto> Stocks = new();
+    List<SupplierOrderDto> orders = new();
+    List<SupplierDto> suppliers = new();
+    List<StockDto> stocks = new();
     Dictionary<int, int> NewOrderItems = new();
-
     CreateSupplierOrderDto NewOrder = new();
-
     HashSet<int> ExpandedOrders = new();
 
-    private bool isLoading = true;
+    private bool? isLoading = true;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-        Orders = await ApiClient.GetSupplierOrdersAsync() ?? [];
-        Suppliers = await ApiClient.GetSuppliersAsync() ?? [];
-        Stocks = await ApiClient.GetAllStocksAsync() ?? [];
+        var orderTask = GetSupplierOrdersAsync();
+        var supplierTask = GetSuppliersAsync();
+        var stockTask = GetAllStocksAsync();
+
+        await Task.WhenAll(orderTask, supplierTask, stockTask);
+
         ResetNewOrderItems();
-        isLoading = false;
+
+        if (isLoading != null)
+            isLoading = false;
+    }
+
+    private async Task GetSupplierOrdersAsync()
+    {
+        var result = await ApiClient.GetSupplierOrdersAsync();
+        if (!result.Success)
+        {
+            errorMessage = result.Error;
+            isLoading = null;
+            return;
+        }
+
+        orders = result.Data ?? [];
+    }
+
+    private async Task GetSuppliersAsync()
+    {
+        var result = await ApiClient.GetSuppliersAsync();
+        if (!result.Success)
+        {
+            errorMessage = result.Error;
+            isLoading = null;
+            return;
+        }
+
+        suppliers = result.Data ?? [];
+    }
+
+    private async Task GetAllStocksAsync()
+    {
+        var result = await ApiClient.GetAllStocksAsync();
+        if (!result.Success)
+        {
+            errorMessage = result.Error;
+            isLoading = null;
+            return;
+        }
+
+        stocks = result.Data ?? [];
     }
 
     void ResetNewOrderItems()
     {
-        NewOrderItems = Stocks.ToDictionary(s => s.StockId ?? 0, s => 0);
+        NewOrderItems = stocks.ToDictionary(s => s.StockId ?? 0, s => 0);
     }
 
     void Toggle(int id)
@@ -162,20 +220,31 @@ else
 
     async Task MarkOrderReceived(int orderId)
     {
-        await ApiClient.MarkOrderReceivedAsync(orderId);
+        var result = await ApiClient.MarkOrderReceivedAsync(orderId);
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            return;
+        }
+
         await Load();
     }
 
     async Task CancelOrder(int id)
     {
-        await ApiClient.CancelOrderAsync(id);
+        var result = await ApiClient.CancelOrderAsync(id);
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            return;
+        }
+
         await Load();
     }
 
     async Task CreateOrder()
     {
         NewOrder.Items = NewOrderItems
-            .Where(x => x.Value > 0)
             .Select(x => new OrderItemDto
             {
                 StockId = x.Key,
@@ -183,7 +252,12 @@ else
             })
             .ToList();
 
-        await ApiClient.CreateSupplierOrderAsync(NewOrder);
+        var result = await ApiClient.CreateSupplierOrderAsync(NewOrder);
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            return;
+        }
 
         ResetNewOrderItems();
 
@@ -192,8 +266,9 @@ else
 
     async Task Load()
     {
-        Orders = await ApiClient.GetSupplierOrdersAsync() ?? [];
+        await GetSupplierOrdersAsync();
         StateHasChanged();
     }
 
+    [Inject] IJSRuntime JS { get; set; } = default!;
 }
