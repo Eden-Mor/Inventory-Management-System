@@ -8,6 +8,11 @@
 @attribute [StreamRendering]
 @inject IStringLocalizer<IMS.Components.Pages.Purchase> L
 
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <h3>@L["Title"]</h3>
 
 
@@ -44,31 +49,35 @@ else
 
     <hr />
 
-    <h4>@L["AvailableStock"]</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>@L["Name"]</th>
-                <th>@L["Available"]</th>
-                <th>@L["Price"]</th>
-                <th>@L["AddRemove"]</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in stockList.Where(x=>x.Amount > 0))
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>@item.Amount</td>
-                    <td>@item.SellPrice.ToString("C")</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary me-1" @onclick="() => AddToCart(item)">+</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveFromCart(item)">−</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudDataGrid T="StockDto" MultiSelection="true" Items="@stockList.Where(x => x.Amount > 0)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@L["AvailableStock"]</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="@L["Name"]" />
+            <PropertyColumn Property="x => x.Amount" Title="@L["Available"]" />
+            <PropertyColumn Property="x => x.SellPrice.ToString()" Title="@L["Price"]" />
+            <TemplateColumn CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudStack Row>
+                        <MudButton Size="Size.Small" OnClick="@(() => AddToCart(context.Item))" Color="Color.Primary" Variant="Variant.Filled">
+                            +
+                        </MudButton>
+
+                        <MudButton Size="Size.Small" OnClick="@(() => RemoveFromCart(context.Item))" Color="Color.Error" Variant="Variant.Filled">
+                            -
+                        </MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="StockDto" />
+        </PagerContent>
+    </MudDataGrid>
 
     <hr />
 
@@ -116,6 +125,7 @@ else
     private Dictionary<StockDto, int> cart = new();
     private int sellerId = -1;
     private bool? isLoading = true;
+    private string _searchString = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -128,6 +138,23 @@ else
         if (isLoading != null)
             isLoading = false;
     }
+
+    private Func<StockDto, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Name?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.SellPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Amount?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        return false;
+    };
 
     private async Task LoadStocksAsync()
     {

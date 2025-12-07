@@ -6,6 +6,11 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <h3>Stock Management</h3>
 
 @if (isLoading == null)
@@ -78,38 +83,40 @@ else
         </EditForm>
     </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Serial</th>
-                <th>Buy Price</th>
-                <th>Sell Price</th>
-                <th>Supplier</th>
-                <th>Amount</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var s in stocks)
-            {
-                <tr>
-                    <td>@s.StockId</td>
-                    <td>@s.Name</td>
-                    <td>@s.SerialNumber</td>
-                    <td>@s.BuyPrice</td>
-                    <td>@s.SellPrice</td>
-                    <td>@suppliers.GetValueOrDefault(s.SupplierId, "Unknown")</td>
-                    <td>@s.Amount</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning me-1" @onclick="() => EditStock(s)">Edit</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteStock(s.StockId)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Stock Items</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.StockId" Title="Id" />
+            <PropertyColumn Property="x => x.Name" />
+            <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" />
+            <PropertyColumn Property="x => x.BuyPrice" Title="Buy Price" />
+            <PropertyColumn Property="x => x.SellPrice" Title="Sell Price" />
+            @* REPLACE STRING.EMPTY WITH UNKNOWN *@
+            <PropertyColumn Property="x => suppliers.GetValueOrDefault(x.SupplierId, string.Empty)" Title="Supplier" />
+            <PropertyColumn Property="x => x.Amount" />
+            <TemplateColumn CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudStack Row>
+                        <MudButton Size="Size.Small" OnClick="@(() => EditStock(context.Item))" Color="Color.Primary" Variant="Variant.Filled">
+                            Edit
+                        </MudButton>
+
+                        <MudButton Size="Size.Small" OnClick="@(() => DeleteStock(context.Item.StockId))" Color="Color.Error" Variant="Variant.Filled">
+                            Delete
+                        </MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="StockDto" />
+        </PagerContent>
+    </MudDataGrid>
 }
 
 @code {
@@ -117,12 +124,13 @@ else
     private Dictionary<int, string> suppliers = new();
     private StockDto stockModel = new();
     private bool editMode = false;
+    private string _searchString = string.Empty;
     private bool? isLoading = true;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var supplierTask =  GetSuppliersAsync();
+        var supplierTask = GetSuppliersAsync();
         var stockTask = LoadStocksAsync();
 
         await Task.WhenAll(supplierTask, stockTask);
@@ -130,6 +138,39 @@ else
         if (isLoading != null)
             isLoading = false;
     }
+
+    private Func<StockDto, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.StockId?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.SupplierId.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        //CHANGE UNKNOWN TO TRANSLATED UNKNOWN STRING
+        if (suppliers.GetValueOrDefault(x.SupplierId, "UNKNOWN").ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.SerialNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.Name?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.SellPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.BuyPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Amount?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        return false;
+    };
 
     private async Task GetSuppliersAsync()
     {
@@ -215,6 +256,9 @@ else
             await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
             return;
         }
+
+        if (stockModel.StockId == id.Value)
+            CancelEdit();
 
         await LoadStocksAsync();
     }

@@ -2,6 +2,7 @@ using IMS.Components;
 using IMS.Helpers;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
+using MudBlazor.Services;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient<InventoryApiClient>(client =>
 {

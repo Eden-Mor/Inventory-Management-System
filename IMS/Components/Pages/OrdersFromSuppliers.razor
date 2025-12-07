@@ -6,6 +6,11 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <h3>Supplier Orders</h3>
 
 <hr />
@@ -40,28 +45,25 @@ else
 
     if (stocks.Any(x => x.SupplierId == NewOrder.SupplierId))
     {
-        <div>
-            <label>Add Items:</label>
-
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var stock in stocks.Where(x => x.SupplierId == NewOrder.SupplierId))
-                    {
-                        <tr>
-                            <td>@stock.Name</td>
-                            <td> <input type="number" min="0" @bind="NewOrderItems[stock.StockId ?? -1]" /></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-        </div>
+        <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks.Where(x => x.SupplierId == NewOrder.SupplierId)" SortMode="SortMode.Multiple" Filterable="true" Hideable="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Add Items</MudText>
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <PropertyColumn Property="x => x.Amount" Title="Amount" />
+                <TemplateColumn CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        <MudStack Row>
+                            <MudInput InputType="InputType.Number" @bind-Value="NewOrderItems[context.Item.StockId ?? -1]" />
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="StockDto" />
+            </PagerContent>
+        </MudDataGrid>
     }
     else
     {
@@ -72,72 +74,103 @@ else
 
     <button class="btn btn-primary" @onclick="CreateOrder">Create Order</button>
 
+    <br />
+
     <hr />
 
-    @foreach (var order in orders)
-    {
-        <div class="card mb-2">
-            <div class="card-header" @onclick="() => Toggle(order.Id)">
-                <b>Order #@order.Id</b> - @order.Supplier.Name - @order.CreatedDate.ToLocalTime().ToShortDateString()
-                <span class="badge
-                                                            @(order.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" :
-                                                                                                                                                                              order.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" :
-                                                                                                                                                                              order.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
-            @order.Status
-        </span>
-        @if (order.StatusChangeDate != null)
-                {
-                    @if (order.Status == IMS_Shared.Enums.OrderStatus.Canceled)
-                    {
-                        <span>
-                            Canceled on @order.StatusChangeDate?.ToLocalTime()
-                        </span>
-                    }
-                    else if (order.Status == IMS_Shared.Enums.OrderStatus.Received)
-                    {
-                        <span>
-                            Received on @order.StatusChangeDate?.ToLocalTime()
-                        </span>
-                    }
-                }
-            </div>
+    <br />
 
-            @if (ExpandedOrders.Contains(order.Id))
-            {
-                <div class="card-body">
+    <MudDataGrid T="SupplierOrderDto"
+                 Items="@orders"
+                 Filterable="true"
+                 QuickFilter="@_orderQuickFilter"
+                 Hideable="true">
 
-                    @if (order.Status == IMS_Shared.Enums.OrderStatus.Pending)
-                    {
-                        <button class="btn btn-success btn-sm" @onclick="() => MarkOrderReceived(order.Id)">
-                            Mark Entire Order Received
-                        </button>
+        <!-- Toolbar -->
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Orders</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_orderSearchString"
+                          Placeholder="Search"
+                          Adornment="Adornment.Start"
+                          Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium" />
+        </ToolBarContent>
 
-                        <button class="btn btn-danger btn-sm ms-2" @onclick="() => CancelOrder(order.Id)">
-                            Cancel Order
-                        </button>
+        <Columns>
+            <TemplateColumn CellStyle="min-height: 0; padding: 0;">
+                <CellTemplate>
+                    @{
+                        var o = context.Item;
                     }
 
-                    <table class="table mt-3">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in order.Items)
+                    <MudExpansionPanel>
+
+                        <!-- HEADER -->
+                        <TitleContent>
+                            <b>Order #@o.Id</b> - @o.Supplier.Name - @o.CreatedDate.ToLocalTime().ToShortDateString()
+                            <span class="badge @(o.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" : o.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" : o.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
+                                @o.Status
+                            </span>
+                            @if (o.StatusChangeDate != null)
                             {
-                                <tr>
-                                    <td>@item.Name</td>
-                                    <td>@item.Amount</td>
-                                </tr>
+                                @if (o.Status == IMS_Shared.Enums.OrderStatus.Canceled)
+                                {
+                                    <span> Canceled on @o.StatusChangeDate?.ToLocalTime() </span>
+                                }
+                                else if (o.Status == IMS_Shared.Enums.OrderStatus.Received)
+                                {
+                                    <span> Received on @o.StatusChangeDate?.ToLocalTime() </span>
+                                }
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    }
+                        </TitleContent>
+
+                        <!-- BODY -->
+                        <ChildContent>
+
+                            <MudTable Items="@o.Items" Elevation="0">
+                                <HeaderContent>
+                                    <MudTh>Item</MudTh>
+                                    <MudTh>Amount</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="stock">
+                                    <MudTd>@stock.Name</MudTd>
+                                    <MudTd>@stock.Amount</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+
+                            @if (o.Status == IMS_Shared.Enums.OrderStatus.Pending)
+                            {
+                                <MudStack Row="true" Spacing="2" Class="mb-3">
+                                    <MudButton Color="Color.Success"
+                                               Variant="Variant.Filled"
+                                               OnClick="@(() => MarkOrderReceived(o.Id))">
+                                        Mark Entire Order Received
+                                    </MudButton>
+
+                                    <MudButton Color="Color.Error"
+                                               Variant="Variant.Filled"
+                                               OnClick="@(() => CancelOrder(o.Id))">
+                                        Cancel Order
+                                    </MudButton>
+                                </MudStack>
+                            }
+
+                        </ChildContent>
+
+                    </MudExpansionPanel>
+                </CellTemplate>
+            </TemplateColumn>
+
+        </Columns>
+
+        <!-- Pagination -->
+        <PagerContent>
+            <MudDataGridPager T="SupplierOrderDto" />
+        </PagerContent>
+
+    </MudDataGrid>
 }
 
 @code {
@@ -148,6 +181,7 @@ else
     Dictionary<int, int> NewOrderItems = new();
     CreateSupplierOrderDto NewOrder = new();
     HashSet<int> ExpandedOrders = new();
+    private string _orderSearchString = string.Empty;
 
     private bool? isLoading = true;
     private string errorMessage = string.Empty;
@@ -165,6 +199,30 @@ else
         if (isLoading != null)
             isLoading = false;
     }
+
+    private Func<SupplierOrderDto, bool> _orderQuickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_orderSearchString))
+            return true;
+
+        if (x.Id.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Supplier.Name.Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.StatusChangeDate?.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        if (x.CreatedDate.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Status.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
 
     private async Task GetSupplierOrdersAsync()
     {
@@ -245,12 +303,19 @@ else
     async Task CreateOrder()
     {
         NewOrder.Items = NewOrderItems
+            .Where(x => x.Value > 0)
             .Select(x => new OrderItemDto
             {
                 StockId = x.Key,
                 Amount = x.Value
             })
             .ToList();
+
+        if (NewOrder.Items.Count == 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please add at least one item to the order.");
+            return;
+        }
 
         var result = await ApiClient.CreateSupplierOrderAsync(NewOrder);
         if (!result.Success)
@@ -266,7 +331,11 @@ else
 
     async Task Load()
     {
-        await GetSupplierOrdersAsync();
+        var supplierTask = GetSupplierOrdersAsync();
+        var stockTask = GetAllStocksAsync();
+
+        await Task.WhenAll(supplierTask, stockTask);
+
         StateHasChanged();
     }
 

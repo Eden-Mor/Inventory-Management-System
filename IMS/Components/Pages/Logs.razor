@@ -6,7 +6,14 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <h3>Logs</h3>
+
+<br/>
 
 @if (isLoading == null)
 {
@@ -21,33 +28,31 @@ else if (isLoading.Value)
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var s in logs)
-            {
-                <tr>
-                    <td>@s.Id</td>
-                    <td>@s.TypeEnum</td>
-                    <td>@s.Date.ToLocalTime()</td>
-                    <td style="white-space: pre-wrap;">@s.Description</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudDataGrid T="LogDto" MultiSelection="true" Items="@logs" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true" >
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Log Items</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Id"/>
+            <PropertyColumn Property="x => x.TypeEnum" Title="Log Type" />
+            <PropertyColumn Property="x => x.Date" />
+            <PropertyColumn Property="x => x.Description"/>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LogDto" />
+        </PagerContent>
+    </MudDataGrid>
 }
 
 @code {
     private List<LogDto> logs = new();
+    private string _searchString = string.Empty;
     private bool? isLoading = true;
     private string errorMessage = string.Empty;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -56,6 +61,26 @@ else
         if (isLoading != null)
             isLoading = false;
     }
+
+    private Func<LogDto, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Id.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Date.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.TypeEnum.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Description?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            return true;
+
+        return false;
+    };
 
     private async Task GetLogsAsync()
     {
