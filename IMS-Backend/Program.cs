@@ -1,9 +1,8 @@
 using IMS_Backend;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using QuestPDF.Infrastructure;
-
-QuestPDF.Settings.License = LicenseType.Community;
+using WkHtmlToPdfDotNet;
+using WkHtmlToPdfDotNet.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +19,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
                       build => build.ConfigureDataSource(x => x.EnableDynamicJson()));
 });
+
+builder.Services.AddSingleton<IConverter>(new SynchronizedConverter(new PdfTools()));
 
 await StartupTasks.StartupArgsHandler(args, builder.Services);
 

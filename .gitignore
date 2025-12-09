@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+IMS-Backend/Templates/**/*.png
+IMS-Backend/Templates/real-invoice-template.html
+IMS-Backend/appsettings.json
+
 # User-specific files
 *.rsuser
 *.suo
