@@ -14,4 +14,6 @@ public class Purchase
 
     public int SellerId { get; set; }
     public Seller Seller { get; set; }
+
+    public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
 }
