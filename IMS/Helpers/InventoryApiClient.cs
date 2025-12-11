@@ -1,4 +1,5 @@
 ﻿using IMS_Shared.Dtos;
+using System.Net.Http;
 
 namespace IMS.Helpers;
 
@@ -18,6 +19,15 @@ public class InventoryApiClient
         {
             string err = await msg.Content.ReadAsStringAsync();
             return ApiResult<TResponse>.Fail(err);
+        }
+
+        if (typeof(TResponse) == typeof(byte[]))
+        {
+            var dataBytes = await msg.Content.ReadAsByteArrayAsync();
+            if (dataBytes is not TResponse dataObj)
+                return ApiResult<TResponse>.Fail("Failed to convert byte array to the specified type.");
+
+            return ApiResult<TResponse>.Ok(dataObj);
         }
 
         var data = await msg.Content.ReadFromJsonAsync<TResponse>();
@@ -111,6 +121,14 @@ public class InventoryApiClient
     // POST /api/Inventory/set-seller-status
     public async Task<ApiResult<int>> ChangeSellerStatusAsync(SellerDto dto)
         => await PostAsync<SellerDto, int>("/api/Inventory/set-seller-status", dto);
+
+    // GET /api/Inventory/active-sellers
+    public async Task<ApiResult<List<PurchaseResponseDto>>> GetPurchasesAsync()
+        => await GetAsync<List<PurchaseResponseDto>>("/api/Inventory/purchases");
+
+    // GET /api/purchase/pdf
+    public async Task<ApiResult<byte[]>> GetPurchaseReceipt(int id)
+        => await GetAsync<byte[]>($"/api/purchase/pdf/?id={id}");
 }
 
 public interface IApiResult 

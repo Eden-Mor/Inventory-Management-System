@@ -467,6 +467,32 @@ public class InventoryController(AppDbContext context) : ControllerBase
         return Ok(seller.Id);
     }
 
+    // -------------------------------
+    // GET PURCHASES
+    // -------------------------------
+    [HttpGet("purchases")]
+    public async Task<IActionResult> GetPurchases()
+    {
+        var purchases = await context.Purchases
+            .Include(p => p.Items)
+            .ThenInclude(i => i.Stock)
+            .Select(x => new PurchaseResponseDto
+            {
+                Id = x.Id,
+                SellerId = x.SellerId,
+                Items = x.Items.Select(i => new PurchaseItemResponseDto
+                {
+                    StockName = i.Stock != null ? i.Stock.Name : string.Empty,
+                    Amount = i.Amount
+                }).ToList(),
+                PurchaseDate = x.PurchaseDate,
+                BuyerName = x.BuyerName
+            })
+            .ToListAsync();
+
+        return Ok(purchases);
+    }
+
 
     // -------------------------------
     // PRIVATE LOG CREATOR

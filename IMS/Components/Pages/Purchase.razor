@@ -49,11 +49,11 @@ else
 
     <hr />
 
-    <MudDataGrid T="StockDto" MultiSelection="true" Items="@stockList.Where(x => x.Amount > 0)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true">
+    <MudDataGrid T="StockDto" MultiSelection="true" Items="@stockList.Where(x => x.Amount > 0)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickStockFilter" Hideable="true">
         <ToolBarContent>
             <MudText Typo="Typo.h6">@L["AvailableStock"]</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_stockSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
@@ -115,7 +115,6 @@ else
     {
         <p>@L["NoItemsInPurchase"]</p>
     }
-
 }
 
 @code {
@@ -125,7 +124,7 @@ else
     private Dictionary<StockDto, int> cart = new();
     private int sellerId = -1;
     private bool? isLoading = true;
-    private string _searchString = string.Empty;
+    private string _stockSearchString = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -139,18 +138,18 @@ else
             isLoading = false;
     }
 
-    private Func<StockDto, bool> _quickFilter => x =>
+    private Func<StockDto, bool> _quickStockFilter => x =>
     {
-        if (string.IsNullOrWhiteSpace(_searchString))
+        if (string.IsNullOrWhiteSpace(_stockSearchString))
             return true;
 
-        if (x.Name?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+        if (x.Name?.Contains(_stockSearchString, StringComparison.OrdinalIgnoreCase) ?? false)
             return true;
 
-        if (x.SellPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+        if (x.SellPrice.ToString().Contains(_stockSearchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (x.Amount?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+        if (x.Amount?.ToString().Contains(_stockSearchString, StringComparison.OrdinalIgnoreCase) ?? false)
             return true;
 
         return false;
@@ -161,7 +160,7 @@ else
         var result = await ApiClient.GetAllStocksAsync();
         if (!result.Success)
         {
-            errorMessage = result.Error ?? "Failed to load stocks.";
+            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load stocks." : result.Error;
             isLoading = null;
             return;
         }
@@ -174,7 +173,7 @@ else
         var result = await ApiClient.GetActiveSellersAsync();
         if (!result.Success)
         {
-            errorMessage = result.Error ?? "Failed to load sellers.";
+            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load sellers." : result.Error;
             isLoading = null;
             return;
         }
@@ -234,7 +233,7 @@ else
         {
             SellerId = sellerId,
             BuyerName = buyerName,
-            Items = cart.Select(c => new PurchaseItemDto
+            Items = cart.Select(c => new PurchaseRequestItemDto
             {
                 StockId = c.Key.StockId ?? 0,
                 Amount = c.Value
@@ -247,13 +246,28 @@ else
             return;
         }
 
-        //TODO: PRINT LIST OF PURCHASED ITEMS
+        await ViewReceiptAsync(result.Data);
 
         cart.Clear();
         buyerName = string.Empty;
         sellerId = -1;
 
-        await LoadStocksAsync();
+        var stockTask = LoadStocksAsync();
+
+        await Task.WhenAll(stockTask);
+    }
+
+    private async Task ViewReceiptAsync(int purchaseId)
+    {
+        var fileApiResult = await ApiClient.GetPurchaseReceipt(purchaseId);
+        if (fileApiResult.Success && fileApiResult.Data != null)
+            await OpenFileAsync(fileApiResult.Data);
+    }
+
+    private async Task OpenFileAsync(byte[] file)
+    {
+        var base64 = Convert.ToBase64String(file);
+        await JS.InvokeVoidAsync("openPdfBlob", base64);
     }
 
     [Inject] IJSRuntime JS { get; set; } = default!;

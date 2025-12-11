@@ -1,0 +1,142 @@
+﻿@page "/purchase-history"
+@using IMS.Helpers
+@using IMS_Shared.Dtos
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.Extensions.Localization
+@inject InventoryApiClient ApiClient
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<h3>Purchase History</h3>
+
+
+@if (isLoading == null)
+{
+    <p>The page had problems loading.</p>
+    <p>Error: @errorMessage</p>
+    <br />
+    <p>Please reload the page.</p>
+}
+else if (isLoading.Value)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickPurchaseFilter" Hideable="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Purchases</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_purchaseSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Id" />
+            <PropertyColumn Property="x => x.BuyerName" />
+            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller"/>
+            <PropertyColumn Property="x => x.PurchaseDate.ToString()" />
+            <PropertyColumn Property="x => x.ItemList" />
+            <TemplateColumn CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudStack Row>
+                        <MudButton Size="Size.Small" OnClick="@(() => ViewReceiptAsync(context.Item.Id))" Color="Color.Primary" Variant="Variant.Filled">
+                            Receipt
+                        </MudButton>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="PurchaseResponseDto" />
+        </PagerContent>
+    </MudDataGrid>
+}
+
+@code {
+    private List<PurchaseResponseDto> purchaseList = new();
+    private List<SellerDto> sellerList = new();
+    private bool? isLoading = true;
+    private string _purchaseSearchString = string.Empty;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sellerTask = LoadSellersAsync();
+        var purchasesTask = LoadPurchasesAsync();
+
+        await Task.WhenAll(sellerTask, purchasesTask);
+
+        if (isLoading != null)
+            isLoading = false;
+    }
+
+    private string GetSellerName(int id) 
+        => sellerList.FirstOrDefault(y => y.Id == id)?.Name ?? "UNKNOWN";
+
+    private Func<PurchaseResponseDto, bool> _quickPurchaseFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_purchaseSearchString))
+            return true;
+
+        if (x.Id.ToString().Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.BuyerName.Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.PurchaseDate.ToString().Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Items.Any(item => item.StockName.Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase)))
+            return true;
+
+        return false;
+    };
+
+    private async Task LoadPurchasesAsync()
+    {
+        var result = await ApiClient.GetPurchasesAsync();
+        if (!result.Success)
+        {
+            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load purchases." : result.Error;
+            isLoading = null;
+            return;
+        }
+
+        purchaseList = result.Data ?? new();
+    }
+
+    private async Task LoadSellersAsync()
+    {
+        var result = await ApiClient.GetSellersAsync();
+        if (!result.Success)
+        {
+            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load sellers." : result.Error;
+            isLoading = null;
+            return;
+        }
+
+        sellerList = result.Data ?? new();
+    }
+
+
+    private async Task ViewReceiptAsync(int purchaseId)
+    {
+        var fileApiResult = await ApiClient.GetPurchaseReceipt(purchaseId);
+        if (fileApiResult.Success && fileApiResult.Data != null)
+            await OpenFileAsync(fileApiResult.Data);
+    }
+
+    private async Task OpenFileAsync(byte[] file)
+    {
+        var base64 = Convert.ToBase64String(file);
+        await JS.InvokeVoidAsync("openPdfBlob", base64);
+    }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+}
