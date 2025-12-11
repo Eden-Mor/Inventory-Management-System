@@ -488,6 +488,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
                 PurchaseDate = x.PurchaseDate,
                 BuyerName = x.BuyerName
             })
+            .OrderByDescending(x=>x.Id)
             .ToListAsync();
 
         return Ok(purchases);
