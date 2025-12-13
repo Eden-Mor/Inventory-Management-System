@@ -12,9 +12,6 @@ namespace IMS_Backend.Controllers;
 [Route("api/[controller]")]
 public class InventoryController(AppDbContext context) : ControllerBase
 {
-    //TODO: Make logs more detailed and useful
-
-
     // -------------------------------
     // ADD SUPPLIER
     // -------------------------------
