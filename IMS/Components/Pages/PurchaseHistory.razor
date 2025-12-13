@@ -37,10 +37,10 @@ else
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" />
-            <PropertyColumn Property="x => x.BuyerName" />
+            <PropertyColumn Property="x => x.BuyerName" Title="Buyer" />
             <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller"/>
-            <PropertyColumn Property="x => x.PurchaseDate.ToString()" />
-            <PropertyColumn Property="x => x.ItemList" />
+            <PropertyColumn Property="x => x.PurchaseDate.ToString()" Title="Purchase Date" />
+            <PropertyColumn Property="x => x.ItemList" Title="Items" />
             <TemplateColumn CellClass="d-flex justify-end">
                 <CellTemplate>
                     <MudStack Row>
