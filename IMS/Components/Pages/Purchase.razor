@@ -210,22 +210,21 @@ else
 
     private async Task BuyAsync()
     {
-        //TODO: VALIDATE INPUT
         if (string.IsNullOrWhiteSpace(buyerName))
         {
-            Console.WriteLine("Buyer name is required.");
+            await AlertUserAsync("Buyer name is required.");
             return;
         }
 
         if (!cart.Any())
         {
-            Console.WriteLine("Cart is empty.");
+            await AlertUserAsync("Cart is empty.");
             return;
         }
 
         if (sellerId == -1)
         {
-            Console.WriteLine("Select a seller.");
+            await AlertUserAsync("Select a seller.");
             return;
         }
 
@@ -242,7 +241,7 @@ else
 
         if (!result.Success)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            await AlertUserAsync($"Error: {result.Error}");
             return;
         }
 
@@ -268,6 +267,11 @@ else
     {
         var base64 = Convert.ToBase64String(file);
         await JS.InvokeVoidAsync("openPdfBlob", base64);
+    }
+
+    private async Task AlertUserAsync(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
     }
 
     [Inject] IJSRuntime JS { get; set; } = default!;

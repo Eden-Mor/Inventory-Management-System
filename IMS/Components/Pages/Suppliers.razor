@@ -89,7 +89,6 @@ else
     private async Task HandleValidSubmit()
     {
         var result = await ApiClient.AddSupplierAsync(supplierModel);
-        
         if (!result.Success)
         {
             await JS.InvokeVoidAsync("alert", $"Error adding supplier: {result.Error}");

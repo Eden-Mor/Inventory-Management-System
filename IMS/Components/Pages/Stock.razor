@@ -96,7 +96,7 @@ else
             <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" />
             <PropertyColumn Property="x => x.BuyPrice" Title="Buy Price" />
             <PropertyColumn Property="x => x.SellPrice" Title="Sell Price" />
-            @* REPLACE STRING.EMPTY WITH UNKNOWN *@
+            @* TODO: REPLACE STRING.EMPTY WITH UNKNOWN *@
             <PropertyColumn Property="x => suppliers.GetValueOrDefault(x.SupplierId, string.Empty)" Title="Supplier" />
             <PropertyColumn Property="x => x.Amount" />
             <TemplateColumn CellClass="d-flex justify-end">
@@ -150,7 +150,7 @@ else
         if (x.SupplierId.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        //CHANGE UNKNOWN TO TRANSLATED UNKNOWN STRING
+        //TODO: CHANGE UNKNOWN TO TRANSLATED UNKNOWN STRING
         if (suppliers.GetValueOrDefault(x.SupplierId, "UNKNOWN").ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
@@ -201,8 +201,29 @@ else
     private async Task HandleValidSubmit()
     {
         //TODO: This had an error by defualt but setting value="0" breaks this, but if I remove the 0 it doesnt select the first option by default.
-        if (stockModel.SupplierId == 0 || !stockModel.Amount.HasValue || stockModel.Amount.Value < 0)
+        if (stockModel.SupplierId == 0)
+        {
+            await AlertUserAsync("Please select a supplier.");
             return;
+        }
+
+        if (!stockModel.Amount.HasValue || stockModel.Amount.Value < 0)
+        {
+            await AlertUserAsync("The stock amount must be larger or equal to 0.");
+            return;
+        }
+
+        if (stockModel.BuyPrice < 0)
+        {
+            await AlertUserAsync("The stock buy price must be larger or equal to 0.");
+            return;
+        }
+
+        if (stockModel.SellPrice < 0)
+        {
+            await AlertUserAsync("The stock sell price must be larger or equal to 0.");
+            return;
+        }
 
         IApiResult result;
         if (editMode)
@@ -212,7 +233,7 @@ else
 
         if (!result.Success)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            await AlertUserAsync($"Error: {result.Error}");
             return;
         }
 
@@ -261,6 +282,11 @@ else
             CancelEdit();
 
         await LoadStocksAsync();
+    }
+
+    private async Task AlertUserAsync(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
     }
 
     [Inject] IJSRuntime JS { get; set; } = default!;
