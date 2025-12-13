@@ -96,8 +96,7 @@ else
             <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" />
             <PropertyColumn Property="x => x.BuyPrice" Title="Buy Price" />
             <PropertyColumn Property="x => x.SellPrice" Title="Sell Price" />
-            @* TODO: REPLACE STRING.EMPTY WITH UNKNOWN *@
-            <PropertyColumn Property="x => suppliers.GetValueOrDefault(x.SupplierId, string.Empty)" Title="Supplier" />
+            <PropertyColumn Property="x => GetSupplierName(x.SupplierId)" Title="Supplier" />
             <PropertyColumn Property="x => x.Amount" />
             <TemplateColumn CellClass="d-flex justify-end">
                 <CellTemplate>
@@ -138,6 +137,9 @@ else
         if (isLoading != null)
             isLoading = false;
     }
+
+    private string GetSupplierName(int id)
+        => suppliers.TryGetValue(id, out var name) ? name : "UNKNOWN";
 
     private Func<StockDto, bool> _quickFilter => x =>
     {
