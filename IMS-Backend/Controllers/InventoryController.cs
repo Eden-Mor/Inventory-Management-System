@@ -71,7 +71,10 @@ public class InventoryController(AppDbContext context) : ControllerBase
                 Name = x.Name,
                 SellPrice = x.SellPrice,
                 SerialNumber = x.SerialNumber,
-                SupplierId = x.SupplierId
+                SupplierId = x.SupplierId,
+                Reserved = x.PurchaseItems
+                                .Where(pi => pi.Purchase != null && pi.Purchase.Status == PurchaseStatus.Pending)
+                                .Sum(pi => pi.Amount)
             })
             .ToListAsync();
         return Ok(stocks);
@@ -206,6 +209,9 @@ public class InventoryController(AppDbContext context) : ControllerBase
         if (seller.Status != SellerStatus.Active)
             return BadRequest("Seller is not active.");
 
+        if (request.Status != PurchaseStatus.Purchased && request.Status != PurchaseStatus.Pending)
+            return BadRequest("Invalid purchase status.");
+
         // Fetch and track stocks
         var stockIds = request.Items.Select(i => i.StockId).Distinct().ToList();
         var stocks = await context.Stocks
@@ -221,17 +227,21 @@ public class InventoryController(AppDbContext context) : ControllerBase
             if (stock.Amount < item.Amount)
                 return BadRequest($"Not enough stock available for {stock.Name} (currently {stock.Amount}, requested {item.Amount}).\nPlease reload the page.");
         }
+        
+        var isPurchased = request.Status == PurchaseStatus.Purchased;
 
         // Create purchase
         var purchase = new Purchase
         {
             SellerId = request.SellerId,
+            Status = request.Status,
             BuyerName = request.BuyerName,
             Items = request.Items.Select(i => new ItemPurchase
             {
                 StockId = i.StockId,
                 Amount = i.Amount
-            }).ToList()
+            }).ToList(),
+            PurchaseDate = isPurchased ? DateTime.UtcNow : null
         };
 
         context.Purchases.Add(purchase);
@@ -243,14 +253,71 @@ public class InventoryController(AppDbContext context) : ControllerBase
             stock.Amount -= item.Amount;
         }
 
-        var sb = new StringBuilder();
-        sb.AppendLine($"Created purchase for buyer: {request.BuyerName}, seller: {seller.Name}");
-        foreach (var s in request.Items)
-            sb.AppendLine($" - Stock: {stocks[s.StockId]?.Name ?? "UNKNOWN STOCK"} (ID: {s.StockId}), Amount: {s.Amount}");
+        var status = isPurchased
+            ? LogType.Confirmed_Purchase_Created 
+            : LogType.Pending_Purchase_Created;
 
-        await SaveAndLogAsync(LogType.Stock_Sold, sb.ToString());
+        await SaveAndLogAsync(status, $"Created purchase for buyer: {request.BuyerName}, seller: {seller.Name} with status {request.Status}.");
 
         return Ok(purchase.Id);
+    }
+
+    // -------------------------------
+    // CANCEL PENDING PURCHASE
+    // -------------------------------
+    [HttpPost("cancel-purchase")]
+    public async Task<IActionResult> CancelPurchase([FromBody] int id)
+    {
+        var purchase = await context.Purchases
+            .Include(p => p.Items)
+            .Include(p => p.Seller)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (purchase == null)
+            return NotFound();
+
+        if (purchase.Status != PurchaseStatus.Pending)
+            return BadRequest("Only pending orders can be canceled.");
+
+        purchase.Status = PurchaseStatus.Canceled;
+
+        //Put the items back to available stock
+        foreach (var item in purchase.Items)
+        {
+            var stock = await context.Stocks.FindAsync(item.StockId);
+            if (stock == null)
+                continue;
+
+            stock.Amount += item.Amount;
+        }
+
+        await SaveAndLogAsync(LogType.Purchase_Canceled, $"Purchase Canceled: (ID: {id}) Seller '{purchase.Seller.Name}' to buyer '{purchase.BuyerName}'.");
+
+        return Ok(id);
+    }
+
+    // -------------------------------
+    // COMPLETE PENDING PURCHASE
+    // -------------------------------
+    [HttpPost("complete-pending-purchase")]
+    public async Task<IActionResult> CompletePendingPurchase([FromBody] int id)
+    {
+        var purchase = await context.Purchases
+            .Include(p => p.Items)
+            .Include(p=> p.Seller)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (purchase == null)
+            return NotFound();
+
+        if (purchase.Status != PurchaseStatus.Pending)
+            return BadRequest("Only pending orders can be marked as purchased.");
+
+        purchase.Status = PurchaseStatus.Purchased;
+
+        await SaveAndLogAsync(LogType.Pending_Purchase_Confirmed, $"Pending Purchase Completed: (ID: {id}) Seller '{purchase.Seller.Name}' to buyer '{purchase.BuyerName}'.");
+
+        return Ok(id);
     }
 
     // -------------------------------
@@ -323,12 +390,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
 
         context.SupplierOrders.Add(order);
 
-        StringBuilder sb = new();
-        sb.AppendLine($"Created Supplier Order to {supplier.Name} (ID: {dto.SupplierId}) with the following items:");
-        foreach (var item in dto.Items)
-            sb.AppendLine($" - Stock ID: {item.StockId}, Amount: {item.Amount}");
-
-        await SaveAndLogAsync(LogType.Supplier_Order_Added, sb.ToString());
+        await SaveAndLogAsync(LogType.Supplier_Order_Added, $"Created Supplier Order to supplier {supplier.Name} (ID: {dto.SupplierId}).");
 
         return Ok(order.Id);
     }
@@ -483,7 +545,8 @@ public class InventoryController(AppDbContext context) : ControllerBase
                     Amount = i.Amount
                 }).ToList(),
                 PurchaseDate = x.PurchaseDate,
-                BuyerName = x.BuyerName
+                BuyerName = x.BuyerName,
+                Status = x.Status
             })
             .OrderByDescending(x=>x.Id)
             .ToListAsync();

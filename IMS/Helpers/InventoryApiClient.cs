@@ -129,6 +129,16 @@ public class InventoryApiClient
     // GET /api/purchase/pdf
     public async Task<ApiResult<byte[]>> GetPurchaseReceipt(int id)
         => await GetAsync<byte[]>($"/api/purchase/pdf/?id={id}");
+
+
+    // POST /api/Inventory/cancel-purchase
+    public async Task<ApiResult<int>> CancelPurchaseAsync(int id)
+        => await PostAsync<int, int>("/api/Inventory/cancel-purchase", id);
+
+
+    // POST /api/Inventory/complete-pending-purchase
+    public async Task<ApiResult<int>> CompletePendingPurchaseAsync(int id)
+        => await PostAsync<int, int>("/api/Inventory/complete-pending-purchase", id);
 }
 
 public interface IApiResult 

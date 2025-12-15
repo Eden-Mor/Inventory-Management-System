@@ -1,4 +1,5 @@
 ﻿@page "/purchase-history"
+@using IMS.Components.Dialogs
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
@@ -6,6 +7,7 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@inject IDialogService DialogService
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -28,19 +30,27 @@ else if (isLoading.Value)
 }
 else
 {
-    <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickPurchaseFilter" Hideable="true">
+    <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList.Where(x => x.Status == IMS_Shared.Enums.PurchaseStatus.Purchased)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickPurchaseFilter" Hideable="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Purchases</MudText>
+            <MudText Typo="Typo.h6">Confirmed Purchases</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_purchaseSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_purchasedSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" />
             <PropertyColumn Property="x => x.BuyerName" Title="Buyer" />
-            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller"/>
-            <PropertyColumn Property="x => x.PurchaseDate.ToString()" Title="Purchase Date" />
-            <PropertyColumn Property="x => x.ItemList" Title="Items" />
+            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller" />
+            <PropertyColumn Property="x => GetPurchaseDateString(x.PurchaseDate)" Title="Purchase Date" />
+            <TemplateColumn Title="Items">
+                <CellTemplate Context="context">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="@(() => OpenItemsDialogAsync(context.Item.ItemList))">
+                        View
+                    </MudButton>
+                </CellTemplate>
+            </TemplateColumn>
             <TemplateColumn CellClass="d-flex justify-end">
                 <CellTemplate>
                     <MudStack Row>
@@ -55,13 +65,64 @@ else
             <MudDataGridPager T="PurchaseResponseDto" />
         </PagerContent>
     </MudDataGrid>
+
+    <hr />
+
+    <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList.Where(x => x.Status != IMS_Shared.Enums.PurchaseStatus.Purchased).OrderBy(x => x.Status)" SortMode="SortMode.Multiple" Filterable="true"
+                 QuickFilter="@_quickPendingPurchaseFilter" Hideable="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Canceled and Pending Purchases</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_pendingPurchaseSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Id" />
+            <PropertyColumn Property="x => x.BuyerName" Title="Buyer" />
+            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller" />
+            <TemplateColumn Title="Items">
+                <CellTemplate Context="context">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="@(() => OpenItemsDialogAsync(context.Item.ItemList))">
+                        View
+                    </MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Status" />
+            <TemplateColumn CellClass="d-flex justify-end">
+                <CellTemplate>
+                    @if (context.Item.Status == IMS_Shared.Enums.PurchaseStatus.Pending)
+                    {
+                        <MudStack Row>
+                            <MudButton Size="Size.Small" OnClick="@(() => CancelPurchaseAsync(context.Item.Id))" Color="Color.Warning" Variant="Variant.Filled">
+                                Cancel Purchase
+                            </MudButton>
+
+                            <MudButton Size="Size.Small" OnClick="@(() => ConfirmPurchaseAsync(context.Item.Id))" Color="Color.Secondary" Variant="Variant.Filled">
+                                Confirm Purchase
+                            </MudButton>
+
+                            <MudButton Size="Size.Small" OnClick="@(() => ViewReceiptAsync(context.Item.Id))" Color="Color.Primary" Variant="Variant.Filled">
+                                Sample Receipt
+                            </MudButton>
+                        </MudStack>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="PurchaseResponseDto" />
+        </PagerContent>
+    </MudDataGrid>
 }
 
 @code {
     private List<PurchaseResponseDto> purchaseList = new();
     private List<SellerDto> sellerList = new();
     private bool? isLoading = true;
-    private string _purchaseSearchString = string.Empty;
+    private string _purchasedSearchString = string.Empty;
+    private string _pendingPurchaseSearchString = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -75,28 +136,51 @@ else
             isLoading = false;
     }
 
-    private string GetSellerName(int id) 
+    private string GetPurchaseDateString(DateTime? date)
+        => date?.ToString() ?? "PENDING";
+
+    private string GetSellerName(int id)
         => sellerList.FirstOrDefault(y => y.Id == id)?.Name ?? "UNKNOWN";
 
     private Func<PurchaseResponseDto, bool> _quickPurchaseFilter => x =>
     {
-        if (string.IsNullOrWhiteSpace(_purchaseSearchString))
+        return IsPurchaseMatchingSearchString(x, _purchasedSearchString);
+    };
+
+    private Func<PurchaseResponseDto, bool> _quickPendingPurchaseFilter => x =>
+    {
+        return IsPurchaseMatchingSearchString(x, _pendingPurchaseSearchString);
+    };
+
+    private bool IsPurchaseMatchingSearchString(PurchaseResponseDto x, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
             return true;
 
-        if (x.Id.ToString().Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+        if (x.Id.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (x.BuyerName.Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+        if (x.BuyerName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (x.PurchaseDate.ToString().Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase))
+        if (GetPurchaseDateString(x.PurchaseDate).Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (x.Items.Any(item => item.StockName.Contains(_purchaseSearchString, StringComparison.OrdinalIgnoreCase)))
+        if (x.Items.Any(item => item.StockName.Contains(searchString, StringComparison.OrdinalIgnoreCase)))
             return true;
 
         return false;
-    };
+    }
+
+    private async Task OpenItemsDialogAsync(string items)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Items"] = items
+        };
+
+        await DialogService.ShowAsync<ItemsDialog>("Items", parameters);
+    }
 
     private async Task LoadPurchasesAsync()
     {
@@ -124,6 +208,32 @@ else
         sellerList = result.Data ?? new();
     }
 
+    private async Task CancelPurchaseAsync(int purchaseId)
+    {
+        var result = await ApiClient.CancelPurchaseAsync(purchaseId);
+        if (!result.Success)
+        {
+            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? $"Unable to cancel purchase id {purchaseId}." : result.Error);
+            return;
+        }
+
+        await LoadPurchasesAsync();
+    }
+
+    private async Task ConfirmPurchaseAsync(int purchaseId)
+    {
+        var result = await ApiClient.CompletePendingPurchaseAsync(purchaseId);
+        if (!result.Success)
+        {
+            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? $"Unable to complete purchase id {purchaseId}." : result.Error);
+            return;
+        }
+
+        var viewReceiptTask = ViewReceiptAsync(purchaseId);
+        var reloadTableTask = LoadPurchasesAsync();
+
+        await Task.WhenAll(viewReceiptTask, reloadTableTask);
+    }
 
     private async Task ViewReceiptAsync(int purchaseId)
     {
@@ -136,6 +246,11 @@ else
     {
         var base64 = Convert.ToBase64String(file);
         await JS.InvokeVoidAsync("openPdfBlob", base64);
+    }
+
+    private async Task AlertUserAsync(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
     }
 
     [Inject] IJSRuntime JS { get; set; } = default!;

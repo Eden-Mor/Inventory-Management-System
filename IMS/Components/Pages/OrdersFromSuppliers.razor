@@ -30,16 +30,13 @@ else
 {
     <h4>Create New Supplier Order</h4>
 
-    <div>
-        <label>Supplier:</label>
-        <select @bind="NewOrder.SupplierId">
-            <option>Choose a supplier</option>
+        <InputSelect @bind-Value="NewOrder.SupplierId" class="form-control" style="max-width: 200px;">
+            <option value="0">-- Select Supplier --</option>
             @foreach (var s in suppliers)
             {
-                <option value="@s.Id">@s.Name</option>
+                <option value="@s.Id">Supplier: @s.Name</option>
             }
-        </select>
-    </div>
+        </InputSelect>
 
     <br />
 

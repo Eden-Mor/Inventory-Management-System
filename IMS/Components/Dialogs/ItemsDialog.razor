@@ -1,0 +1,11 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText Style="white-space: pre-line;">
+            @Items
+        </MudText>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter] public string Items { get; set; } = string.Empty;
+}

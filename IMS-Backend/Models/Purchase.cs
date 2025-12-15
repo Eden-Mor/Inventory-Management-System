@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IMS_Shared.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace IMS_Backend.Models;
 
@@ -15,5 +16,6 @@ public class Purchase
     public int SellerId { get; set; }
     public Seller Seller { get; set; }
 
-    public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
+    public DateTime? PurchaseDate { get; set; }
+    public PurchaseStatus Status { get; set; } = PurchaseStatus.Purchased;
 }

@@ -1,4 +1,5 @@
 ﻿using IMS_Backend.Models;
+using IMS_Shared.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace IMS_Backend;
@@ -51,9 +52,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasMany(s => s.Sales)
             .WithOne(p => p.Seller)
             .HasForeignKey(p => p.SellerId);
-
-        modelBuilder.Entity<Purchase>()
-            .Property(p => p.PurchaseDate)
-            .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
     }
 }

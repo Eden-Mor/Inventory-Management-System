@@ -2,6 +2,7 @@
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
+@using IMS_Shared.Enums
 @using Microsoft.Extensions.Localization
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
@@ -80,6 +81,15 @@ else
         }
     </select>
 
+    <select class="form-select d-inline w-auto" @bind="purchaseStatus">
+        @foreach (var status in allowedPurchaseStatuses)
+        {
+            <option value="@status">
+                @status
+            </option>
+        }
+    </select>
+
     <hr />
 
     @if (cart.Any())
@@ -122,10 +132,12 @@ else
     private List<StockDto> stockList = new();
     private List<SellerDto> sellerList = new();
     private Dictionary<StockDto, int> cart = new();
+    private PurchaseStatus purchaseStatus = PurchaseStatus.Purchased;
     private int sellerId = -1;
     private bool? isLoading = true;
     private string _stockSearchString = string.Empty;
     private string errorMessage = string.Empty;
+    private List<PurchaseStatus> allowedPurchaseStatuses = [PurchaseStatus.Purchased, PurchaseStatus.Pending];
 
     protected override async Task OnInitializedAsync()
     {
@@ -232,6 +244,7 @@ else
         {
             SellerId = sellerId,
             BuyerName = buyerName,
+            Status = purchaseStatus,
             Items = cart.Select(c => new PurchaseRequestItemDto
             {
                 StockId = c.Key.StockId ?? 0,
@@ -250,6 +263,7 @@ else
         cart.Clear();
         buyerName = string.Empty;
         sellerId = -1;
+        purchaseStatus = PurchaseStatus.Purchased;
 
         var stockTask = LoadStocksAsync();
 

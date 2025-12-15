@@ -9,4 +9,5 @@ public class StockDto
     public decimal SellPrice { get; set; }
     public int SupplierId { get; set; }
     public int? Amount { get; set; }
+    public int Reserved { get; set; } = 0;
 }

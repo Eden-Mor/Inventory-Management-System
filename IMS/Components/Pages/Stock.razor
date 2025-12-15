@@ -98,6 +98,7 @@ else
             <PropertyColumn Property="x => x.SellPrice" Title="Sell Price" />
             <PropertyColumn Property="x => GetSupplierName(x.SupplierId)" Title="Supplier" />
             <PropertyColumn Property="x => x.Amount" />
+            <PropertyColumn Property="x => x.Reserved" />
             <TemplateColumn CellClass="d-flex justify-end">
                 <CellTemplate>
                     <MudStack Row>
@@ -129,6 +130,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        CancelEdit();
+
         var supplierTask = GetSuppliersAsync();
         var stockTask = LoadStocksAsync();
 
@@ -260,7 +263,11 @@ else
 
     private void CancelEdit()
     {
+        var tempSupplier = stockModel.SupplierId;
         stockModel = new StockDto();
+        stockModel.SupplierId = tempSupplier;
+
+        stockModel.Amount = 0;
         editMode = false;
     }
 

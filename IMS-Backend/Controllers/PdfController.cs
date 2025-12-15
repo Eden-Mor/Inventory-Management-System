@@ -1,3 +1,4 @@
+using IMS_Shared.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -29,14 +30,21 @@ public class PdfController(AppDbContext context, IWebHostEnvironment env, IConfi
         if (purchase == null)
             return NotFound();
 
+        var pendingStatusText = config.GetValue<string>("PdfSettings:WatermarkText") ?? "Pending";
+
         // Replace placeholders
-        html = html.Replace("{{BusinessName}}", config.GetValue<string>("PdfSettings:BusinessName") ?? string.Empty);
+        html = html.Replace("{{BusinessName}}", config.GetValue<string>("PdfSettings:BusinessName") ?? "Business Name");
         html = html.Replace("{{SellerName}}", purchase.Seller.Name);
         html = html.Replace("{{CustomerName}}", purchase.BuyerName);
         html = html.Replace("{{OrderId}}", id.ToString());
 
+        if (purchase.Status == PurchaseStatus.Pending)
+            html = html.Replace("{{WatermarkText}}", pendingStatusText);
+        else
+            html = html.Replace("{{WatermarkText}}", string.Empty);
+
         var dateTimeFormat = config.GetValue<string>("PdfSettings:DateFormat") ?? "MM/dd/yyyy HH:mm";
-        html = html.Replace("{{PurchaseDate}}", purchase.PurchaseDate.ToString(dateTimeFormat));
+        html = html.Replace("{{PurchaseDate}}", purchase.PurchaseDate?.ToString(dateTimeFormat) ?? pendingStatusText);
 
         var taxRate = config.GetValue<decimal>("PdfSettings:TaxRate");
 
