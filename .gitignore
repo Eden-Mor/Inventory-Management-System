@@ -6,6 +6,7 @@
 IMS-Backend/Templates/**/*.png
 IMS-Backend/Templates/real-invoice-template.html
 /IMS-Backend/appsettings.json
+/IMS-Backend/appsettings.Development.json
 /docker-compose.prod.yml
 
 
