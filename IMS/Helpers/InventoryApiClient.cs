@@ -3,16 +3,8 @@ using System.Net.Http;
 
 namespace IMS.Helpers;
 
-public class InventoryApiClient
+public class InventoryApiClient(HttpClient httpClient)
 {
-    private readonly HttpClient _http;
-
-    public InventoryApiClient(HttpClient httpClient)
-    {
-        _http = httpClient;
-        _http.BaseAddress ??= new Uri("https://localhost:5001"); // change to your API base URL
-    }
-
     private static async Task<ApiResult<TResponse>> HandleResponse<TResponse>(HttpResponseMessage msg)
     {
         if (!msg.IsSuccessStatusCode)
@@ -36,25 +28,25 @@ public class InventoryApiClient
 
     public async Task<ApiResult<TResponse>> GetAsync<TResponse>(string url)
     {
-        var msg = await _http.GetAsync(url);
+        var msg = await httpClient.GetAsync(url);
         return await HandleResponse<TResponse>(msg);
     }
 
     public async Task<ApiResult<TResponse>> PostAsync<TRequest, TResponse>(string url, TRequest body)
     {
-        var msg = await _http.PostAsJsonAsync(url, body);
+        var msg = await httpClient.PostAsJsonAsync(url, body);
         return await HandleResponse<TResponse>(msg);
     }
 
     public async Task<ApiResult<TResponse>> PutAsync<TRequest, TResponse>(string url, TRequest body)
     {
-        var msg = await _http.PutAsJsonAsync(url, body);
+        var msg = await httpClient.PutAsJsonAsync(url, body);
         return await HandleResponse<TResponse>(msg);
     }
 
     public async Task<ApiResult<TResponse>> DeleteAsync<TRequest, TResponse>(string url, TRequest body)
     {
-        var msg = await _http.DeleteAsync(url);
+        var msg = await httpClient.DeleteAsync(url);
         return await HandleResponse<TResponse>(msg);
     }
 

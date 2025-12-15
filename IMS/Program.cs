@@ -1,5 +1,6 @@
 using IMS.Components;
 using IMS.Helpers;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using MudBlazor.Services;
@@ -15,7 +16,11 @@ builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient<InventoryApiClient>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7084");
+#if DEBUG
+    client.BaseAddress = new Uri("https://localhost:32777");
+#else
+    client.BaseAddress = new Uri("http://imsapi:8080");
+#endif
 });
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
@@ -36,6 +41,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
         new CookieRequestCultureProvider()
     ];
 });
+
+//builder.Services.AddDataProtection()
+//    .PersistKeysToFileSystem(new DirectoryInfo("/home/app/.aspnet/DataProtection-Keys"))
+//    .SetApplicationName("IMSFrontend");
 
 var app = builder.Build();
 

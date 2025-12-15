@@ -1,16 +1,27 @@
 services:
   imsapi:
-    image: ${DOCKER_REGISTRY-}imsapi
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: IMS-Backend/Dockerfile
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=ims;Username=postgres;Password=supersecret
+      ASPNETCORE_ENVIRONMENT: Docker
     depends_on:
       - db
     networks:
       - ims-network
     restart: always
+
+  imsfrontend:
+    build:
+      context: .
+      dockerfile: IMS/Dockerfile
+    depends_on:
+      - imsapi
+    networks:
+      - ims-network
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
   
   db:
     image: postgres:16
