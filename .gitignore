@@ -5,7 +5,9 @@
 
 IMS-Backend/Templates/**/*.png
 IMS-Backend/Templates/real-invoice-template.html
-IMS-Backend/appsettings.json
+/IMS-Backend/appsettings.json
+/docker-compose.prod.yml
+
 
 # User-specific files
 *.rsuser
@@ -365,3 +367,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/IMS-Backend/appsettings.json
+/IMS-Backend/appsettings.json
+/IMS-Backend/appsettings.json
