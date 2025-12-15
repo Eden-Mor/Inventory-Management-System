@@ -314,6 +314,7 @@ public class InventoryController(AppDbContext context) : ControllerBase
             return BadRequest("Only pending orders can be marked as purchased.");
 
         purchase.Status = PurchaseStatus.Purchased;
+        purchase.PurchaseDate = DateTime.UtcNow;
 
         await SaveAndLogAsync(LogType.Pending_Purchase_Confirmed, $"Pending Purchase Completed: (ID: {id}) Seller '{purchase.Seller.Name}' to buyer '{purchase.BuyerName}'.");
 
