@@ -33,10 +33,10 @@ if (app.Environment.IsDevelopment())
 
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
+    await StartupTasks.StartupArgsHandler(["migrate-db"], builder.Services);
 }
 
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
