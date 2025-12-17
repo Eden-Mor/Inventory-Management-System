@@ -1,0 +1,28 @@
+﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<LoadingWrapper> L
+
+@if (IsLoading == null)
+{
+    <p>@L["PageLoadError"]</p>
+    <p>@L["ErrorLabel"]: @ErrorMessage</p>
+    <br />
+    <p>@L["PleaseReload"]</p>
+}
+else if (IsLoading.Value)
+{
+    <p>@L["Loading"]</p>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter]
+    public bool? IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

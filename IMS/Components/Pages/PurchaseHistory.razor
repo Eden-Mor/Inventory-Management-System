@@ -1,5 +1,6 @@
 ﻿@page "/purchase-history"
 @using IMS.Components.Dialogs
+@using IMS.Components.Layout
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
@@ -18,19 +19,8 @@
 <h3>@L["Title"]</h3>
 
 
-@if (isLoading == null)
-{
-    <p>@L["PageLoadError"]</p>
-    <p>@L["ErrorLabel"]: @errorMessage</p>
-    <br />
-    <p>@L["PleaseReload"]</p>
-}
-else if (isLoading.Value)
-{
-    <p>@L["Loading"]</p>
-}
-else
-{
+
+<LoadingWrapper IsLoading="@isLoading" ErrorMessage="@errorMessage">
     <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList.Where(x => x.Status == IMS_Shared.Enums.PurchaseStatus.Purchased)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickPurchaseFilter" Hideable="true">
         <ToolBarContent>
             <MudText Typo="Typo.h6">@L["ConfirmedPurchases"]</MudText>
@@ -116,7 +106,7 @@ else
             <MudDataGridPager T="PurchaseResponseDto" />
         </PagerContent>
     </MudDataGrid>
-}
+</LoadingWrapper>
 
 @code {
     private List<PurchaseResponseDto> purchaseList = new();

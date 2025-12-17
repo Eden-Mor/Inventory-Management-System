@@ -1,4 +1,5 @@
 ﻿@page "/purchase"
+@using IMS.Components.Layout
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
@@ -16,25 +17,12 @@
 
 <h3>@L["Title"]</h3>
 
-
-@if (isLoading == null)
-{
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
-    <br />
-    <p>Please reload the page.</p>
-}
-else if (isLoading.Value)
-{
-    <p>@L["Loading"]</p>
-}
-else
-{
+<LoadingWrapper IsLoading="@isLoading" ErrorMessage="@errorMessage">
     <MudDataGrid T="StockDto" MultiSelection="true" Items="@stockList.Where(x => x.Amount > 0)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickStockFilter" Hideable="true">
         <ToolBarContent>
             <MudText Typo="Typo.h6">@L["AvailableStock"]</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_stockSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_stockSearchString" Placeholder="@L["Search"]" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
@@ -71,7 +59,7 @@ else
 
     <select class="form-select d-inline w-auto" @bind="sellerId">
         <option value="-1">
-            Select a seller
+            @L["SelectSeller"]
         </option>
         @foreach (var seller in sellerList)
         {
@@ -125,7 +113,7 @@ else
     {
         <p>@L["NoItemsInPurchase"]</p>
     }
-}
+</LoadingWrapper>
 
 @code {
     private string buyerName = string.Empty;

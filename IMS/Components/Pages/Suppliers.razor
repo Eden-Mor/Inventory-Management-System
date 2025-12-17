@@ -1,4 +1,5 @@
 ﻿@page "/suppliers"
+@using IMS.Components.Layout
 @using IMS.Helpers
 @using IMS_Shared.Dtos
 @using System.ComponentModel.DataAnnotations
@@ -10,19 +11,8 @@
 
 <h3>@L["Title"]</h3>
 
-@if (isLoading == null)
-{
-    <p>@L["PageLoadError"]</p>
-    <p>@L["ErrorLabel"]: @errorMessage</p>
-    <br />
-    <p>@L["PleaseReload"]</p>
-}
-else if (isLoading.Value)
-{
-    <p>@L["Loading"]</p>
-}
-else
-{
+
+<LoadingWrapper IsLoading="@isLoading" ErrorMessage="@errorMessage">
     <div class="card p-3 mb-4">
         <h5>@L["AddNewSupplier"]</h5>
         <EditForm Model="supplierModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
@@ -30,7 +20,7 @@ else
             <ValidationSummary />
 
             <div class="mb-3">
-                <label>@L["NameLabel"]:</label>
+                <label>@L["Name"]:</label>
                 <InputText class="form-control" @bind-Value="supplierModel.Name" />
             </div>
 
@@ -58,7 +48,7 @@ else
             }
         </tbody>
     </table>
-}
+</LoadingWrapper>
 
 @code {
     private Dictionary<int, string> suppliers = new();
