@@ -4,6 +4,17 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>@L["HelloWorld"]</h1>
+<h1>@L["Title"]</h1>
 
-@L["WelcomeMessage"]
+<br />
+
+<p>
+    @((MarkupString)GetWelcomeMessage())
+</p>
+
+@code{
+    private string GetWelcomeMessage()
+    {
+        return L["WelcomeMessage"];
+    }
+}
