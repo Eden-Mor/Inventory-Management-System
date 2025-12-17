@@ -17,7 +17,7 @@ builder.Services.AddMudServices();
 builder.Services.AddHttpClient<InventoryApiClient>(client =>
 {
 #if DEBUG
-    client.BaseAddress = new Uri("https://localhost:32777");
+    client.BaseAddress = new Uri("https://localhost:32769");
 #else
     client.BaseAddress = new Uri("http://imsapi:8080");
 #endif

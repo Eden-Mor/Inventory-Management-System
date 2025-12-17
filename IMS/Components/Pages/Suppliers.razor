@@ -5,35 +5,37 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.Suppliers> L
 
-<h3>Suppliers Management</h3>
+<h3>@L["Title"]</h3>
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
+    <p>@L["PageLoadError"]</p>
+    <p>@L["ErrorLabel"]: @errorMessage</p>
     <br />
-    <p>Please reload the page.</p>
+    <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+    <p>@L["Loading"]</p>
 }
 else
 {
     <div class="card p-3 mb-4">
-        <h5>Add New Supplier</h5>
+        <h5>@L["AddNewSupplier"]</h5>
         <EditForm Model="supplierModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
             <div class="mb-3">
-                <label>Name:</label>
+                <label>@L["NameLabel"]:</label>
                 <InputText class="form-control" @bind-Value="supplierModel.Name" />
             </div>
 
             <button class="btn btn-primary me-2" type="submit">
-                Add Supplier
+                @L["AddSupplier"]
             </button>
 
         </EditForm>
@@ -42,8 +44,8 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Id</th>
-                <th>Name</th>
+                <th>@L["Id"]</th>
+                <th>@L["Name"]</th>
             </tr>
         </thead>
         <tbody>
@@ -91,7 +93,7 @@ else
         var result = await ApiClient.AddSupplierAsync(supplierModel);
         if (!result.Success)
         {
-            await JS.InvokeVoidAsync("alert", $"Error adding supplier: {result.Error}");
+            await JS.InvokeVoidAsync("alert", $"{L["ErrorAddingSupplier"]}: {result.Error}");
             return;
         }
 

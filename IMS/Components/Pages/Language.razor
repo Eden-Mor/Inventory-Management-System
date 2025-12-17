@@ -2,11 +2,13 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 @inject NavigationManager Nav
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.Language> L
 
-<h3>Select Language</h3>
+<h3>@L["SelectLanguage"]</h3>
 
-<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.English)">English</button>
-<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.Hebrew)">עברית</button>
+<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.English)">@L["English"]</button>
+<button class="btn btn-primary" @onclick="() => ChangeLanguage(LanguageEnum.Hebrew)">@L["Hebrew"]</button>
 
 @code {
     private void ChangeLanguage(LanguageEnum language)

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="SelectLanguage" xml:space="preserve"><value>Select Language</value></data>
+ <data name="English" xml:space="preserve"><value>English</value></data>
+ <data name="Hebrew" xml:space="preserve"><value>Hebrew</value></data>
+</root>

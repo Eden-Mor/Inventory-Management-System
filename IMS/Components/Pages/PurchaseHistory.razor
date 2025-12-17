@@ -8,46 +8,47 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 @inject IDialogService DialogService
+@inject IStringLocalizer<IMS.Components.Pages.PurchaseHistory> L
 
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<h3>Purchase History</h3>
+<h3>@L["Title"]</h3>
 
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
+    <p>@L["PageLoadError"]</p>
+    <p>@L["ErrorLabel"]: @errorMessage</p>
     <br />
-    <p>Please reload the page.</p>
+    <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+    <p>@L["Loading"]</p>
 }
 else
 {
     <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList.Where(x => x.Status == IMS_Shared.Enums.PurchaseStatus.Purchased)" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickPurchaseFilter" Hideable="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Confirmed Purchases</MudText>
+            <MudText Typo="Typo.h6">@L["ConfirmedPurchases"]</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_purchasedSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_purchasedSearchString" Placeholder="@L["Search"]" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" />
-            <PropertyColumn Property="x => x.BuyerName" Title="Buyer" />
-            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller" />
-            <PropertyColumn Property="x => GetPurchaseDateString(x.PurchaseDate)" Title="Purchase Date" />
-            <TemplateColumn Title="Items">
+            <PropertyColumn Property="x => x.BuyerName" Title="@L["Buyer"]" />
+            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="@L["Seller"]" />
+            <PropertyColumn Property="x => GetPurchaseDateString(x.PurchaseDate)" Title="@L["PurchaseDate"]" />
+            <TemplateColumn Title="@L["Items"]">
                 <CellTemplate Context="context">
                     <MudButton Size="Size.Small"
                                Variant="Variant.Text"
                                OnClick="@(() => OpenItemsDialogAsync(context.Item.ItemList))">
-                        View
+                        @L["View"]
                     </MudButton>
                 </CellTemplate>
             </TemplateColumn>
@@ -55,7 +56,7 @@ else
                 <CellTemplate>
                     <MudStack Row>
                         <MudButton Size="Size.Small" OnClick="@(() => ViewReceiptAsync(context.Item.Id))" Color="Color.Primary" Variant="Variant.Filled">
-                            Receipt
+                            @L["Receipt"]
                         </MudButton>
                     </MudStack>
                 </CellTemplate>
@@ -71,21 +72,21 @@ else
     <MudDataGrid T="PurchaseResponseDto" MultiSelection="true" Items="purchaseList.Where(x => x.Status != IMS_Shared.Enums.PurchaseStatus.Purchased).OrderBy(x => x.Status)" SortMode="SortMode.Multiple" Filterable="true"
                  QuickFilter="@_quickPendingPurchaseFilter" Hideable="true">
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Canceled and Pending Purchases</MudText>
+            <MudText Typo="Typo.h6">@L["CanceledAndPendingPurchases"]</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_pendingPurchaseSearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_pendingPurchaseSearchString" Placeholder="@L["Search"]" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" />
-            <PropertyColumn Property="x => x.BuyerName" Title="Buyer" />
-            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="Seller" />
-            <TemplateColumn Title="Items">
+            <PropertyColumn Property="x => x.BuyerName" Title="@L["Buyer"]" />
+            <PropertyColumn Property="x => GetSellerName(x.SellerId)" Title="@L["Seller"]" />
+            <TemplateColumn Title="@L["Items"]">
                 <CellTemplate Context="context">
                     <MudButton Size="Size.Small"
                                Variant="Variant.Text"
                                OnClick="@(() => OpenItemsDialogAsync(context.Item.ItemList))">
-                        View
+                        @L["View"]
                     </MudButton>
                 </CellTemplate>
             </TemplateColumn>
@@ -96,15 +97,15 @@ else
                     {
                         <MudStack Row>
                             <MudButton Size="Size.Small" OnClick="@(() => CancelPurchaseAsync(context.Item.Id))" Color="Color.Warning" Variant="Variant.Filled">
-                                Cancel Purchase
+                                @L["CancelPurchase"]
                             </MudButton>
 
                             <MudButton Size="Size.Small" OnClick="@(() => ConfirmPurchaseAsync(context.Item.Id))" Color="Color.Secondary" Variant="Variant.Filled">
-                                Confirm Purchase
+                                @L["ConfirmPurchase"]
                             </MudButton>
 
                             <MudButton Size="Size.Small" OnClick="@(() => ViewReceiptAsync(context.Item.Id))" Color="Color.Primary" Variant="Variant.Filled">
-                                Sample Receipt
+                                @L["SampleReceipt"]
                             </MudButton>
                         </MudStack>
                     }
@@ -137,10 +138,10 @@ else
     }
 
     private string GetPurchaseDateString(DateTime? date)
-        => date?.ToString() ?? "PENDING";
+    => date?.ToString() ?? L["Pending"].ToString();
 
     private string GetSellerName(int id)
-        => sellerList.FirstOrDefault(y => y.Id == id)?.Name ?? "UNKNOWN";
+    => sellerList.FirstOrDefault(y => y.Id == id)?.Name ?? L["Unknown"].ToString();
 
     private Func<PurchaseResponseDto, bool> _quickPurchaseFilter => x =>
     {
@@ -179,7 +180,7 @@ else
             ["Items"] = items
         };
 
-        await DialogService.ShowAsync<ItemsDialog>("Items", parameters);
+        await DialogService.ShowAsync<ItemsDialog>(L["Items"].ToString(), parameters);
     }
 
     private async Task LoadPurchasesAsync()
@@ -187,7 +188,7 @@ else
         var result = await ApiClient.GetPurchasesAsync();
         if (!result.Success)
         {
-            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load purchases." : result.Error;
+            errorMessage = string.IsNullOrEmpty(result.Error) ? L["FailedToLoadPurchases"].ToString() : result.Error;
             isLoading = null;
             return;
         }
@@ -200,7 +201,7 @@ else
         var result = await ApiClient.GetSellersAsync();
         if (!result.Success)
         {
-            errorMessage = string.IsNullOrEmpty(result.Error) ? "Failed to load sellers." : result.Error;
+            errorMessage = string.IsNullOrEmpty(result.Error) ? L["FailedToLoadSellers"].ToString() : result.Error;
             isLoading = null;
             return;
         }
@@ -213,7 +214,7 @@ else
         var result = await ApiClient.CancelPurchaseAsync(purchaseId);
         if (!result.Success)
         {
-            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? $"Unable to cancel purchase id {purchaseId}." : result.Error);
+            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? string.Format(L["UnableToCancelPurchase"].ToString(), purchaseId) : result.Error);
             return;
         }
 
@@ -225,7 +226,7 @@ else
         var result = await ApiClient.CompletePendingPurchaseAsync(purchaseId);
         if (!result.Success)
         {
-            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? $"Unable to complete purchase id {purchaseId}." : result.Error);
+            await AlertUserAsync(string.IsNullOrEmpty(result.Error) ? string.Format(L["UnableToCompletePurchase"].ToString(), purchaseId) : result.Error);
             return;
         }
 

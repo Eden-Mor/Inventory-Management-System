@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -118,30 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Home" xml:space="preserve">
-    <value>Home</value>
+    <value>בית</value>
   </data>
-  <data name="Language" xml:space="preserve">
-    <value>Language</value>
+  <data name="HelloWorld" xml:space="preserve">
+    <value>שלום עולם</value>
   </data>
-  <data name="Logs" xml:space="preserve">
-    <value>Logs</value>
-  </data>
-  <data name="Purchase" xml:space="preserve">
-    <value>Purchase</value>
-  </data>
-  <data name="PurchaseHistory" xml:space="preserve">
-    <value>Purchase History</value>
-  </data>
-  <data name="Sellers" xml:space="preserve">
-    <value>Sellers</value>
-  </data>
-  <data name="Stock" xml:space="preserve">
-    <value>Stock</value>
-  </data>
-  <data name="SupplierOrders" xml:space="preserve">
-    <value>Supplier Orders</value>
-  </data>
-  <data name="Suppliers" xml:space="preserve">
-    <value>Suppliers</value>
+  <data name="WelcomeMessage" xml:space="preserve">
+    <value>ברכות</value>
   </data>
 </root>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="About" xml:space="preserve"><value>About</value></data>
+ <data name="UnhandledError" xml:space="preserve"><value>An unhandled error has occurred.</value></data>
+ <data name="Reload" xml:space="preserve"><value>Reload</value></data>
+</root>

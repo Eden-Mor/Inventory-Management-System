@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="Title" xml:space="preserve"><value>ניהול מלאי</value></data>
+ <data name="EditStock" xml:space="preserve"><value>עריכת פריט</value></data>
+ <data name="AddNewStock" xml:space="preserve"><value>הוספת פריט חדש</value></data>
+ <data name="NameLabel" xml:space="preserve"><value>שם הפריט</value></data>
+ <data name="SerialNumber" xml:space="preserve"><value>מספר סידורי</value></data>
+ <data name="BuyPrice" xml:space="preserve"><value>מחיר קנייה</value></data>
+ <data name="SellPrice" xml:space="preserve"><value>מחיר מכירה</value></data>
+ <data name="SupplierLabel" xml:space="preserve"><value>ספק</value></data>
+ <data name="SelectSupplierPlaceholder" xml:space="preserve"><value>-- בחר ספק --</value></data>
+ <data name="Amount" xml:space="preserve"><value>כמות</value></data>
+ <data name="SaveChanges" xml:space="preserve"><value>שמור שינויים</value></data>
+ <data name="AddStock" xml:space="preserve"><value>הוסף פריט</value></data>
+ <data name="Cancel" xml:space="preserve"><value>בטל</value></data>
+ <data name="StockItems" xml:space="preserve"><value>פריטים</value></data>
+ <data name="Search" xml:space="preserve"><value>חיפוש</value></data>
+ <data name="Id" xml:space="preserve"><value>Id</value></data>
+ <data name="Supplier" xml:space="preserve"><value>ספק</value></data>
+ <data name="Unknown" xml:space="preserve"><value>לא ידוע</value></data>
+ <data name="PleaseSelectSupplier" xml:space="preserve"><value>אנא בחר ספק.</value></data>
+ <data name="StockAmountMustBeNonNegative" xml:space="preserve"><value>The stock amount must be larger or equal to0.</value></data>
+ <data name="StockBuyPriceNonNegative" xml:space="preserve"><value>The stock buy price must be larger or equal to0.</value></data>
+ <data name="StockSellPriceNonNegative" xml:space="preserve"><value>The stock sell price must be larger or equal to0.</value></data>
+ <data name="DeleteStockConfirm" xml:space="preserve"><value>Delete stock #{0}?</value></data>
+</root>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="SelectLanguage" xml:space="preserve"><value>בחר שפה</value></data>
+ <data name="English" xml:space="preserve"><value>אנגלית</value></data>
+ <data name="Hebrew" xml:space="preserve"><value>עברית</value></data>
+</root>

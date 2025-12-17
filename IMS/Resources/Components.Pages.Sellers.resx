@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="Title" xml:space="preserve"><value>Seller Management</value></data>
+ <data name="PageLoadError" xml:space="preserve"><value>The page had problems loading.</value></data>
+ <data name="ErrorLabel" xml:space="preserve"><value>Error</value></data>
+ <data name="PleaseReload" xml:space="preserve"><value>Please reload the page.</value></data>
+ <data name="Loading" xml:space="preserve"><value>Loading...</value></data>
+ <data name="AddNewSeller" xml:space="preserve"><value>Add New Seller</value></data>
+ <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
+ <data name="AddSeller" xml:space="preserve"><value>Add Seller</value></data>
+ <data name="Id" xml:space="preserve"><value>Id</value></data>
+ <data name="Name" xml:space="preserve"><value>Name</value></data>
+ <data name="Status" xml:space="preserve"><value>Status</value></data>
+ <data name="ChangeStatus" xml:space="preserve"><value>Change Status</value></data>
+ <data name="Save" xml:space="preserve"><value>Save</value></data>
+ <data name="ErrorChangingStatus" xml:space="preserve"><value>Error changing status</value></data>
+ <data name="ErrorAddingSeller" xml:space="preserve"><value>Error adding seller</value></data>
+</root>

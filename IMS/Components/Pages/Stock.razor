@@ -5,298 +5,300 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.Stock> L
 
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<h3>Stock Management</h3>
+<h3>@L["Title"]</h3>
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
-    <br />
-    <p>Please reload the page.</p>
+ <p>@L["PageLoadError"]</p>
+ <p>@L["ErrorLabel"]: @errorMessage</p>
+ <br />
+ <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+ <p>@L["Loading"]</p>
 }
 else
 {
-    <div class="card p-3 mb-4">
-        <h5>@(editMode ? "Edit Stock" : "Add New Stock")</h5>
-        <EditForm Model="stockModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+ <div class="card p-3 mb-4">
+ <h5>@(editMode ? L["EditStock"] : L["AddNewStock"])</h5>
+ <EditForm Model="stockModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
+ <DataAnnotationsValidator />
+ <ValidationSummary />
 
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+ <div style="display:flex; gap:10px; flex-wrap:wrap;">
 
-                <div class="mb-3">
-                    <label>Name:</label>
-                    <InputText class="form-control" @bind-Value="stockModel.Name" />
-                </div>
+ <div class="mb-3">
+ <label>@L["NameLabel"]:</label>
+ <InputText class="form-control" @bind-Value="stockModel.Name" />
+ </div>
 
-                <div class="mb-3">
-                    <label>Serial Number:</label>
-                    <InputText class="form-control" @bind-Value="stockModel.SerialNumber" />
-                </div>
+ <div class="mb-3">
+ <label>@L["SerialNumber"]:</label>
+ <InputText class="form-control" @bind-Value="stockModel.SerialNumber" />
+ </div>
 
-                <div class="mb-3">
-                    <label>Buy Price:</label>
-                    <InputNumber class="form-control" @bind-Value="stockModel.BuyPrice" />
-                </div>
+ <div class="mb-3">
+ <label>@L["BuyPrice"]:</label>
+ <InputNumber class="form-control" @bind-Value="stockModel.BuyPrice" />
+ </div>
 
-                <div class="mb-3">
-                    <label>Sell Price:</label>
-                    <InputNumber class="form-control" @bind-Value="stockModel.SellPrice" />
-                </div>
+ <div class="mb-3">
+ <label>@L["SellPrice"]:</label>
+ <InputNumber class="form-control" @bind-Value="stockModel.SellPrice" />
+ </div>
 
-                <div class="mb-3">
-                    <label>Supplier:</label>
-                    <InputSelect @bind-Value="stockModel.SupplierId" class="form-control">
-                        <option value="0">-- Select Supplier --</option>
-                        @foreach (var kvp in suppliers)
-                        {
-                            <option value="@kvp.Key">@kvp.Value</option>
-                        }
-                    </InputSelect>
-                </div>
+ <div class="mb-3">
+ <label>@L["SupplierLabel"]:</label>
+ <InputSelect @bind-Value="stockModel.SupplierId" class="form-control">
+ <option value="0">@L["SelectSupplierPlaceholder"]</option>
+ @foreach (var kvp in suppliers)
+ {
+ <option value="@kvp.Key">@kvp.Value</option>
+ }
+ </InputSelect>
+ </div>
 
-                <div class="mb-3">
-                    <label>Amount:</label>
-                    <InputNumber class="form-control" @bind-Value="stockModel.Amount" />
-                </div>
+ <div class="mb-3">
+ <label>@L["Amount"]:</label>
+ <InputNumber class="form-control" @bind-Value="stockModel.Amount" />
+ </div>
 
-            </div>
+ </div>
 
-            <button class="btn btn-primary me-2" type="submit">
-                @(editMode ? "Save Changes" : "Add Stock")
-            </button>
+ <button class="btn btn-primary me-2" type="submit">
+ @(editMode ? L["SaveChanges"] : L["AddStock"])
+ </button>
 
-            @if (editMode)
-            {
-                <button class="btn btn-secondary" type="button" @onclick="CancelEdit">Cancel</button>
-            }
-        </EditForm>
-    </div>
+ @if (editMode)
+ {
+ <button class="btn btn-secondary" type="button" @onclick="CancelEdit">@L["Cancel"]</button>
+ }
+ </EditForm>
+ </div>
 
-    <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true">
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">Stock Items</MudText>
-            <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-        </ToolBarContent>
-        <Columns>
-            <PropertyColumn Property="x => x.StockId" Title="Id" />
-            <PropertyColumn Property="x => x.Name" />
-            <PropertyColumn Property="x => x.SerialNumber" Title="Serial Number" />
-            <PropertyColumn Property="x => x.BuyPrice" Title="Buy Price" />
-            <PropertyColumn Property="x => x.SellPrice" Title="Sell Price" />
-            <PropertyColumn Property="x => GetSupplierName(x.SupplierId)" Title="Supplier" />
-            <PropertyColumn Property="x => x.Amount" />
-            <PropertyColumn Property="x => x.Reserved" />
-            <TemplateColumn CellClass="d-flex justify-end">
-                <CellTemplate>
-                    <MudStack Row>
-                        <MudButton Size="Size.Small" OnClick="@(() => EditStock(context.Item))" Color="Color.Primary" Variant="Variant.Filled">
-                            Edit
-                        </MudButton>
+ <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true">
+ <ToolBarContent>
+ <MudText Typo="Typo.h6">@L["StockItems"]</MudText>
+ <MudSpacer />
+ <MudTextField @bind-Value="_searchString" Placeholder="@L["Search"]" Adornment="Adornment.Start" Immediate="true"
+ AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+ </ToolBarContent>
+ <Columns>
+ <PropertyColumn Property="x => x.StockId" Title="@L["Id"]" />
+ <PropertyColumn Property="x => x.Name" />
+ <PropertyColumn Property="x => x.SerialNumber" Title="@L["SerialNumber"]" />
+ <PropertyColumn Property="x => x.BuyPrice" Title="@L["BuyPrice"]" />
+ <PropertyColumn Property="x => x.SellPrice" Title="@L["SellPrice"]" />
+ <PropertyColumn Property="x => GetSupplierName(x.SupplierId)" Title="@L["Supplier"]" />
+ <PropertyColumn Property="x => x.Amount" />
+ <PropertyColumn Property="x => x.Reserved" />
+ <TemplateColumn CellClass="d-flex justify-end">
+ <CellTemplate>
+ <MudStack Row>
+ <MudButton Size="Size.Small" OnClick="@(() => EditStock(context.Item))" Color="Color.Primary" Variant="Variant.Filled">
+ @L["Edit"]
+ </MudButton>
 
-                        <MudButton Size="Size.Small" OnClick="@(() => DeleteStock(context.Item.StockId))" Color="Color.Error" Variant="Variant.Filled">
-                            Delete
-                        </MudButton>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudDataGridPager T="StockDto" />
-        </PagerContent>
-    </MudDataGrid>
+ <MudButton Size="Size.Small" OnClick="@(() => DeleteStock(context.Item.StockId))" Color="Color.Error" Variant="Variant.Filled">
+ @L["Delete"]
+ </MudButton>
+ </MudStack>
+ </CellTemplate>
+ </TemplateColumn>
+ </Columns>
+ <PagerContent>
+ <MudDataGridPager T="StockDto" />
+ </PagerContent>
+ </MudDataGrid>
 }
 
 @code {
-    private List<StockDto> stocks = new();
-    private Dictionary<int, string> suppliers = new();
-    private StockDto stockModel = new();
-    private bool editMode = false;
-    private string _searchString = string.Empty;
-    private bool? isLoading = true;
-    private string errorMessage = string.Empty;
+ private List<StockDto> stocks = new();
+ private Dictionary<int, string> suppliers = new();
+ private StockDto stockModel = new();
+ private bool editMode = false;
+ private string _searchString = string.Empty;
+ private bool? isLoading = true;
+ private string errorMessage = string.Empty;
 
-    protected override async Task OnInitializedAsync()
-    {
-        CancelEdit();
+ protected override async Task OnInitializedAsync()
+ {
+ CancelEdit();
 
-        var supplierTask = GetSuppliersAsync();
-        var stockTask = LoadStocksAsync();
+ var supplierTask = GetSuppliersAsync();
+ var stockTask = LoadStocksAsync();
 
-        await Task.WhenAll(supplierTask, stockTask);
+ await Task.WhenAll(supplierTask, stockTask);
 
-        if (isLoading != null)
-            isLoading = false;
-    }
+ if (isLoading != null)
+ isLoading = false;
+ }
 
-    private string GetSupplierName(int id)
-        => suppliers.TryGetValue(id, out var name) ? name : "UNKNOWN";
+ private string GetSupplierName(int id)
+ => suppliers.TryGetValue(id, out var name) ? name : L["Unknown"].ToString();
 
-    private Func<StockDto, bool> _quickFilter => x =>
-    {
-        if (string.IsNullOrWhiteSpace(_searchString))
-            return true;
+ private Func<StockDto, bool> _quickFilter => x =>
+ {
+ if (string.IsNullOrWhiteSpace(_searchString))
+ return true;
 
-        if (x.StockId?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
-            return true;
+ if (x.StockId?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+ return true;
 
-        if (x.SupplierId.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.SupplierId.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        //TODO: CHANGE UNKNOWN TO TRANSLATED UNKNOWN STRING
-        if (suppliers.GetValueOrDefault(x.SupplierId, "UNKNOWN").ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ //TODO: CHANGE UNKNOWN TO TRANSLATED UNKNOWN STRING
+ if (suppliers.GetValueOrDefault(x.SupplierId, L["Unknown"].ToString()).ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.SerialNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
-            return true;
+ if (x.SerialNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+ return true;
 
-        if (x.Name?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
-            return true;
+ if (x.Name?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+ return true;
 
-        if (x.SellPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.SellPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.BuyPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.BuyPrice.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.Amount?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
-            return true;
+ if (x.Amount?.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+ return true;
 
-        return false;
-    };
+ return false;
+ };
 
-    private async Task GetSuppliersAsync()
-    {
-        var result = await ApiClient.GetSuppliersAsync();
-        if (!result.Success)
-        {
-            errorMessage = result.Error;
-            isLoading = null;
-            return;
-        }
+ private async Task GetSuppliersAsync()
+ {
+ var result = await ApiClient.GetSuppliersAsync();
+ if (!result.Success)
+ {
+ errorMessage = result.Error;
+ isLoading = null;
+ return;
+ }
 
-        suppliers = result.Data?.ToDictionary(s => s.Id, s => s.Name) ?? new();
-    }
+ suppliers = result.Data?.ToDictionary(s => s.Id, s => s.Name) ?? new();
+ }
 
-    private async Task LoadStocksAsync()
-    {
-        var result = await ApiClient.GetAllStocksAsync();
-        if (!result.Success)
-        {
-            errorMessage = result.Error;
-            isLoading = null;
-            return;
-        }
+ private async Task LoadStocksAsync()
+ {
+ var result = await ApiClient.GetAllStocksAsync();
+ if (!result.Success)
+ {
+ errorMessage = result.Error;
+ isLoading = null;
+ return;
+ }
 
-        stocks = result.Data ?? new();
-    }
+ stocks = result.Data ?? new();
+ }
 
-    private async Task HandleValidSubmit()
-    {
-        //TODO: This had an error by defualt but setting value="0" breaks this, but if I remove the 0 it doesnt select the first option by default.
-        if (stockModel.SupplierId == 0)
-        {
-            await AlertUserAsync("Please select a supplier.");
-            return;
-        }
+ private async Task HandleValidSubmit()
+ {
+ //TODO: This had an error by defualt but setting value="0" breaks this, but if I remove the0 it doesnt select the first option by default.
+ if (stockModel.SupplierId ==0)
+ {
+ await AlertUserAsync(L["PleaseSelectSupplier"].ToString());
+ return;
+ }
 
-        if (!stockModel.Amount.HasValue || stockModel.Amount.Value < 0)
-        {
-            await AlertUserAsync("The stock amount must be larger or equal to 0.");
-            return;
-        }
+ if (!stockModel.Amount.HasValue || stockModel.Amount.Value <0)
+ {
+ await AlertUserAsync(L["StockAmountMustBeNonNegative"].ToString());
+ return;
+ }
 
-        if (stockModel.BuyPrice < 0)
-        {
-            await AlertUserAsync("The stock buy price must be larger or equal to 0.");
-            return;
-        }
+ if (stockModel.BuyPrice <0)
+ {
+ await AlertUserAsync(L["StockBuyPriceNonNegative"].ToString());
+ return;
+ }
 
-        if (stockModel.SellPrice < 0)
-        {
-            await AlertUserAsync("The stock sell price must be larger or equal to 0.");
-            return;
-        }
+ if (stockModel.SellPrice <0)
+ {
+ await AlertUserAsync(L["StockSellPriceNonNegative"].ToString());
+ return;
+ }
 
-        IApiResult result;
-        if (editMode)
-            result = await ApiClient.EditStockAsync(stockModel.StockId ?? 0, stockModel);
-        else
-            result = await ApiClient.AddStockAsync(stockModel);
+ IApiResult result;
+ if (editMode)
+ result = await ApiClient.EditStockAsync(stockModel.StockId ??0, stockModel);
+ else
+ result = await ApiClient.AddStockAsync(stockModel);
 
-        if (!result.Success)
-        {
-            await AlertUserAsync($"Error: {result.Error}");
-            return;
-        }
+ if (!result.Success)
+ {
+ await AlertUserAsync($"{L["ErrorLabel"]}: {result.Error}");
+ return;
+ }
 
-        await LoadStocksAsync();
-        CancelEdit();
-    }
+ await LoadStocksAsync();
+ CancelEdit();
+ }
 
-    private void EditStock(StockDto s)
-    {
-        stockModel = new StockDto
-        {
-            StockId = s.StockId,
-            Name = s.Name,
-            SerialNumber = s.SerialNumber,
-            BuyPrice = s.BuyPrice,
-            SellPrice = s.SellPrice,
-            SupplierId = s.SupplierId,
-            Amount = s.Amount
-        };
-        editMode = true;
-    }
+ private void EditStock(StockDto s)
+ {
+ stockModel = new StockDto
+ {
+ StockId = s.StockId,
+ Name = s.Name,
+ SerialNumber = s.SerialNumber,
+ BuyPrice = s.BuyPrice,
+ SellPrice = s.SellPrice,
+ SupplierId = s.SupplierId,
+ Amount = s.Amount
+ };
+ editMode = true;
+ }
 
-    private void CancelEdit()
-    {
-        var tempSupplier = stockModel.SupplierId;
-        stockModel = new StockDto();
-        stockModel.SupplierId = tempSupplier;
+ private void CancelEdit()
+ {
+ var tempSupplier = stockModel.SupplierId;
+ stockModel = new StockDto();
+ stockModel.SupplierId = tempSupplier;
 
-        stockModel.Amount = 0;
-        editMode = false;
-    }
+ stockModel.Amount =0;
+ editMode = false;
+ }
 
-    private async Task DeleteStock(int? id)
-    {
-        if (id == null)
-            return;
+ private async Task DeleteStock(int? id)
+ {
+ if (id == null)
+ return;
 
-        bool confirm = await JS.InvokeAsync<bool>("confirm", $"Delete stock #{id}?");
-        if (!confirm)
-            return;
+ bool confirm = await JS.InvokeAsync<bool>("confirm", string.Format(L["DeleteStockConfirm"].ToString(), id));
+ if (!confirm)
+ return;
 
-        var result = await ApiClient.RemoveStockAsync(id.Value);
-        if (!result.Success)
-        {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
-            return;
-        }
+ var result = await ApiClient.RemoveStockAsync(id.Value);
+ if (!result.Success)
+ {
+ await JS.InvokeVoidAsync("alert", $"{L["ErrorLabel"]}: {result.Error}");
+ return;
+ }
 
-        if (stockModel.StockId == id.Value)
-            CancelEdit();
+ if (stockModel.StockId == id.Value)
+ CancelEdit();
 
-        await LoadStocksAsync();
-    }
+ await LoadStocksAsync();
+ }
 
-    private async Task AlertUserAsync(string message)
-    {
-        await JS.InvokeVoidAsync("alert", message);
-    }
+ private async Task AlertUserAsync(string message)
+ {
+ await JS.InvokeVoidAsync("alert", message);
+ }
 
-    [Inject] IJSRuntime JS { get; set; } = default!;
+ [Inject] IJSRuntime JS { get; set; } = default!;
 }

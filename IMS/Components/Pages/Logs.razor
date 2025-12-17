@@ -5,39 +5,41 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.Logs> L
 
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<h3>Logs</h3>
+<h3>@L["Title"]</h3>
 
 <br/>
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
+    <p>@L["PageLoadError"]</p>
+    <p>@L["ErrorLabel"]: @errorMessage</p>
     <br />
-    <p>Please reload the page.</p>
+    <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+    <p>@L["Loading"]</p>
 }
 else
 {
     <MudDataGrid T="LogDto" MultiSelection="true" Items="@logs" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter" Hideable="true" >
         <ToolBarContent>
-            <MudText Typo="Typo.h6">Log Items</MudText>
+            <MudText Typo="Typo.h6">@L["LogItems"]</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+            <MudTextField @bind-Value="_searchString" Placeholder="@L["Search"]" Adornment="Adornment.Start" Immediate="true"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id"/>
-            <PropertyColumn Property="x => x.TypeEnum" Title="Log Type" />
+            <PropertyColumn Property="x => x.TypeEnum" Title="@L["LogType"]" />
             <PropertyColumn Property="x => x.Date" />
             <PropertyColumn Property="x => x.Description"/>
         </Columns>

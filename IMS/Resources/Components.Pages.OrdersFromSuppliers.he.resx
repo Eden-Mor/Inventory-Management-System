@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+ <data name="Title" xml:space="preserve"><value>הזמנות ספקים</value></data>
+ <data name="CreateNewSupplierOrder" xml:space="preserve"><value>צור הזמנת ספק חדשה</value></data>
+ <data name="SelectSupplierPlaceholder" xml:space="preserve"><value>-- בחר ספק --</value></data>
+ <data name="SupplierLabel" xml:space="preserve"><value>ספק</value></data>
+ <data name="AddItems" xml:space="preserve"><value>הוסף פריטים</value></data>
+ <data name="Name" xml:space="preserve"><value>שם</value></data>
+ <data name="Amount" xml:space="preserve"><value>כמות</value></data>
+ <data name="NoItemsForSupplier" xml:space="preserve"><value>אין פריטים לספק {0}.</value></data>
+ <data name="CreateOrder" xml:space="preserve"><value>צור הזמנה</value></data>
+ <data name="Orders" xml:space="preserve"><value>הזמנות</value></data>
+ <data name="Search" xml:space="preserve"><value>חיפוש</value></data>
+ <data name="Order" xml:space="preserve"><value>הזמנה</value></data>
+ <data name="CanceledOn" xml:space="preserve"><value>בוטל בתאריך</value></data>
+ <data name="ReceivedOn" xml:space="preserve"><value>התקבל בתאריך</value></data>
+ <data name="Item" xml:space="preserve"><value>פריט</value></data>
+ <data name="MarkEntireOrderReceived" xml:space="preserve"><value>ההמנה התקבלה</value></data>
+ <data name="CancelOrder" xml:space="preserve"><value>בטל הזמנה</value></data>
+ <data name="PleaseAddAtLeastOneItemToOrder" xml:space="preserve"><value>הוסף לפחות פריט אחד.</value></data>
+ <data name="ErrorLabelFormat" xml:space="preserve"><value>Error: {0}</value></data>
+</root>

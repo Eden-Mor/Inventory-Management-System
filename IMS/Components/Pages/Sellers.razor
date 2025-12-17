@@ -6,35 +6,37 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.Sellers> L
 
-<h3>Seller Management</h3>
+<h3>@L["Title"]</h3>
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
+    <p>@L["PageLoadError"]</p>
+    <p>@L["ErrorLabel"]: @errorMessage</p>
     <br />
-    <p>Please reload the page.</p>
+    <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+    <p>@L["Loading"]</p>
 }
 else
 {
     <div class="card p-3 mb-4">
-        <h5>Add New Seller</h5>
+        <h5>@L["AddNewSeller"]</h5>
         <EditForm Model="sellerModel" OnValidSubmit="HandleValidSubmit" FormName="StockForm">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
             <div class="mb-3">
-                <label>Name:</label>
+                <label>@L["NameLabel"]:</label>
                 <InputText class="form-control" @bind-Value="sellerModel.Name" />
             </div>
 
             <button class="btn btn-primary me-2" type="submit">
-                Add Seller
+                @L["AddSeller"]
             </button>
 
         </EditForm>
@@ -43,10 +45,10 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Id</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Change Status</th>
+                <th>@L["Id"]</th>
+                <th>@L["Name"]</th>
+                <th>@L["Status"]</th>
+                <th>@L["ChangeStatus"]</th>
             </tr>
         </thead>
         <tbody>
@@ -69,7 +71,7 @@ else
 
                         <button class="btn btn-sm btn-success ms-2"
                                 @onclick="() => ChangeStatus(s.Id)">
-                            Save
+                            @L["Save"]
                         </button>
                     </td>
                 </tr>
@@ -111,7 +113,7 @@ else
         var result = await ApiClient.AddSellerAsync(sellerModel);
         if (!result.Success)
         {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
+            await JS.InvokeVoidAsync("alert", $"{L["ErrorLabel"]}: {result.Error}");
             return;
         }
 
@@ -146,7 +148,7 @@ else
 
         if (!result.Success)
         {
-            await JS.InvokeVoidAsync("alert", $"Error changing status: {result.Error}");
+            await JS.InvokeVoidAsync("alert", $"{L["ErrorChangingStatus"]}: {result.Error}");
             return;
         }
 

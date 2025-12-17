@@ -5,336 +5,338 @@
 @inject InventoryApiClient ApiClient
 @rendermode InteractiveServer
 @attribute [StreamRendering]
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<IMS.Components.Pages.OrdersFromSuppliers> L
 
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<h3>Supplier Orders</h3>
+<h3>@L["Title"]</h3>
 
 <hr />
 
 @if (isLoading == null)
 {
-    <p>The page had problems loading.</p>
-    <p>Error: @errorMessage</p>
-    <br />
-    <p>Please reload the page.</p>
+ <p>@L["PageLoadError"]</p>
+ <p>@L["ErrorLabel"]: @errorMessage</p>
+ <br />
+ <p>@L["PleaseReload"]</p>
 }
 else if (isLoading.Value)
 {
-    <p>Loading...</p>
+ <p>@L["Loading"]</p>
 }
 else
 {
-    <h4>Create New Supplier Order</h4>
+ <h4>@L["CreateNewSupplierOrder"]</h4>
 
-        <InputSelect @bind-Value="NewOrder.SupplierId" class="form-control" style="max-width: 200px;">
-            <option value="0">-- Select Supplier --</option>
-            @foreach (var s in suppliers)
-            {
-                <option value="@s.Id">Supplier: @s.Name</option>
-            }
-        </InputSelect>
+ <InputSelect @bind-Value="NewOrder.SupplierId" class="form-control" style="max-width:200px;">
+ <option value="0">@L["SelectSupplierPlaceholder"]</option>
+ @foreach (var s in suppliers)
+ {
+ <option value="@s.Id">@L["SupplierLabel"]: @s.Name</option>
+ }
+ </InputSelect>
 
-    <br />
+ <br />
 
-    if (stocks.Any(x => x.SupplierId == NewOrder.SupplierId))
-    {
-        <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks.Where(x => x.SupplierId == NewOrder.SupplierId)" SortMode="SortMode.Multiple" Filterable="true" Hideable="true">
-            <ToolBarContent>
-                <MudText Typo="Typo.h6">Add Items</MudText>
-            </ToolBarContent>
-            <Columns>
-                <PropertyColumn Property="x => x.Name" Title="Name" />
-                <PropertyColumn Property="x => x.Amount" Title="Amount" />
-                <TemplateColumn CellClass="d-flex justify-end">
-                    <CellTemplate>
-                        <MudStack Row>
-                            <MudInput InputType="InputType.Number" @bind-Value="NewOrderItems[context.Item.StockId ?? -1]" />
-                        </MudStack>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="StockDto" />
-            </PagerContent>
-        </MudDataGrid>
-    }
-    else
-    {
-        <p>No items exist for supplier @suppliers.FirstOrDefault(x => x.Id == NewOrder.SupplierId)?.Name.</p>
-    }
+ if (stocks.Any(x => x.SupplierId == NewOrder.SupplierId))
+ {
+ <MudDataGrid T="StockDto" MultiSelection="true" Items="@stocks.Where(x => x.SupplierId == NewOrder.SupplierId)" SortMode="SortMode.Multiple" Filterable="true" Hideable="true">
+ <ToolBarContent>
+ <MudText Typo="Typo.h6">@L["AddItems"]</MudText>
+ </ToolBarContent>
+ <Columns>
+ <PropertyColumn Property="x => x.Name" Title="@L["Name"]" />
+ <PropertyColumn Property="x => x.Amount" Title="@L["Amount"]" />
+ <TemplateColumn CellClass="d-flex justify-end">
+ <CellTemplate>
+ <MudStack Row>
+ <MudInput InputType="InputType.Number" @bind-Value="NewOrderItems[context.Item.StockId ?? -1]" />
+ </MudStack>
+ </CellTemplate>
+ </TemplateColumn>
+ </Columns>
+ <PagerContent>
+ <MudDataGridPager T="StockDto" />
+ </PagerContent>
+ </MudDataGrid>
+ }
+ else
+ {
+ <p>@L["NoItemsForSupplier", suppliers.FirstOrDefault(x => x.Id == NewOrder.SupplierId)?.Name]</p>
+ }
 
-    <br />
+ <br />
 
-    <button class="btn btn-primary" @onclick="CreateOrder">Create Order</button>
+ <button class="btn btn-primary" @onclick="CreateOrder">@L["CreateOrder"]</button>
 
-    <br />
+ <br />
 
-    <hr />
+ <hr />
 
-    <br />
+ <br />
 
-    <MudDataGrid T="SupplierOrderDto"
-                 Items="@orders"
-                 Filterable="true"
-                 QuickFilter="@_orderQuickFilter"
-                 Hideable="true">
+ <MudDataGrid T="SupplierOrderDto"
+ Items="@orders"
+ Filterable="true"
+ QuickFilter="@_orderQuickFilter"
+ Hideable="true">
 
-        <!-- Toolbar -->
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">Orders</MudText>
-            <MudSpacer />
-            <MudTextField @bind-Value="_orderSearchString"
-                          Placeholder="Search"
-                          Adornment="Adornment.Start"
-                          Immediate="true"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" />
-        </ToolBarContent>
+ <!-- Toolbar -->
+ <ToolBarContent>
+ <MudText Typo="Typo.h6">@L["Orders"]</MudText>
+ <MudSpacer />
+ <MudTextField @bind-Value="_orderSearchString"
+ Placeholder="@L["Search"]"
+ Adornment="Adornment.Start"
+ Immediate="true"
+ AdornmentIcon="@Icons.Material.Filled.Search"
+ IconSize="Size.Medium" />
+ </ToolBarContent>
 
-        <Columns>
-            <TemplateColumn CellStyle="min-height: 0; padding: 0;">
-                <CellTemplate>
-                    @{
-                        var o = context.Item;
-                    }
+ <Columns>
+ <TemplateColumn CellStyle="min-height:0; padding:0;">
+ <CellTemplate>
+ @{
+ var o = context.Item;
+ }
 
-                    <MudExpansionPanel>
+ <MudExpansionPanel>
 
-                        <!-- HEADER -->
-                        <TitleContent>
-                            <b>Order #@o.Id</b> - @o.Supplier.Name - @o.CreatedDate.ToLocalTime().ToShortDateString()
-                            <span class="badge @(o.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" : o.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" : o.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
-                                @o.Status
-                            </span>
-                            @if (o.StatusChangeDate != null)
-                            {
-                                @if (o.Status == IMS_Shared.Enums.OrderStatus.Canceled)
-                                {
-                                    <span> Canceled on @o.StatusChangeDate?.ToLocalTime() </span>
-                                }
-                                else if (o.Status == IMS_Shared.Enums.OrderStatus.Received)
-                                {
-                                    <span> Received on @o.StatusChangeDate?.ToLocalTime() </span>
-                                }
-                            }
-                        </TitleContent>
+ <!-- HEADER -->
+ <TitleContent>
+ <b>@L["Order"] #@o.Id</b> - @o.Supplier.Name - @o.CreatedDate.ToLocalTime().ToShortDateString()
+ <span class="badge @(o.Status == IMS_Shared.Enums.OrderStatus.Canceled ? "bg-danger" : o.Status == IMS_Shared.Enums.OrderStatus.Pending ? "bg-warning text-dark" : o.Status == IMS_Shared.Enums.OrderStatus.Received ? "bg-success" : "bg-secondary")">
+ @o.Status
+ </span>
+ @if (o.StatusChangeDate != null)
+ {
+ @if (o.Status == IMS_Shared.Enums.OrderStatus.Canceled)
+ {
+ <span> @L["CanceledOn"] @o.StatusChangeDate?.ToLocalTime() </span>
+ }
+ else if (o.Status == IMS_Shared.Enums.OrderStatus.Received)
+ {
+ <span> @L["ReceivedOn"] @o.StatusChangeDate?.ToLocalTime() </span>
+ }
+ }
+ </TitleContent>
 
-                        <!-- BODY -->
-                        <ChildContent>
+ <!-- BODY -->
+ <ChildContent>
 
-                            <MudTable Items="@o.Items" Elevation="0">
-                                <HeaderContent>
-                                    <MudTh>Item</MudTh>
-                                    <MudTh>Amount</MudTh>
-                                </HeaderContent>
-                                <RowTemplate Context="stock">
-                                    <MudTd>@stock.Name</MudTd>
-                                    <MudTd>@stock.Amount</MudTd>
-                                </RowTemplate>
-                            </MudTable>
+ <MudTable Items="@o.Items" Elevation="0">
+ <HeaderContent>
+ <MudTh>@L["Item"]</MudTh>
+ <MudTh>@L["Amount"]</MudTh>
+ </HeaderContent>
+ <RowTemplate Context="stock">
+ <MudTd>@stock.Name</MudTd>
+ <MudTd>@stock.Amount</MudTd>
+ </RowTemplate>
+ </MudTable>
 
-                            @if (o.Status == IMS_Shared.Enums.OrderStatus.Pending)
-                            {
-                                <MudStack Row="true" Spacing="2" Class="mb-3">
-                                    <MudButton Color="Color.Success"
-                                               Variant="Variant.Filled"
-                                               OnClick="@(() => MarkOrderReceived(o.Id))">
-                                        Mark Entire Order Received
-                                    </MudButton>
+ @if (o.Status == IMS_Shared.Enums.OrderStatus.Pending)
+ {
+ <MudStack Row="true" Spacing="2" Class="mb-3">
+ <MudButton Color="Color.Success"
+ Variant="Variant.Filled"
+ OnClick="@(() => MarkOrderReceived(o.Id))">
+ @L["MarkEntireOrderReceived"]
+ </MudButton>
 
-                                    <MudButton Color="Color.Error"
-                                               Variant="Variant.Filled"
-                                               OnClick="@(() => CancelOrder(o.Id))">
-                                        Cancel Order
-                                    </MudButton>
-                                </MudStack>
-                            }
+ <MudButton Color="Color.Error"
+ Variant="Variant.Filled"
+ OnClick="@(() => CancelOrder(o.Id))">
+ @L["CancelOrder"]
+ </MudButton>
+ </MudStack>
+ }
 
-                        </ChildContent>
+ </ChildContent>
 
-                    </MudExpansionPanel>
-                </CellTemplate>
-            </TemplateColumn>
+ </MudExpansionPanel>
+ </CellTemplate>
+ </TemplateColumn>
 
-        </Columns>
+ </Columns>
 
-        <!-- Pagination -->
-        <PagerContent>
-            <MudDataGridPager T="SupplierOrderDto" />
-        </PagerContent>
+ <!-- Pagination -->
+ <PagerContent>
+ <MudDataGridPager T="SupplierOrderDto" />
+ </PagerContent>
 
-    </MudDataGrid>
+ </MudDataGrid>
 }
 
 @code {
 
-    List<SupplierOrderDto> orders = new();
-    List<SupplierDto> suppliers = new();
-    List<StockDto> stocks = new();
-    Dictionary<int, int> NewOrderItems = new();
-    CreateSupplierOrderDto NewOrder = new();
-    HashSet<int> ExpandedOrders = new();
-    private string _orderSearchString = string.Empty;
+ List<SupplierOrderDto> orders = new();
+ List<SupplierDto> suppliers = new();
+ List<StockDto> stocks = new();
+ Dictionary<int, int> NewOrderItems = new();
+ CreateSupplierOrderDto NewOrder = new();
+ HashSet<int> ExpandedOrders = new();
+ private string _orderSearchString = string.Empty;
 
-    private bool? isLoading = true;
-    private string errorMessage = string.Empty;
+ private bool? isLoading = true;
+ private string errorMessage = string.Empty;
 
-    protected override async Task OnInitializedAsync()
-    {
-        var orderTask = GetSupplierOrdersAsync();
-        var supplierTask = GetSuppliersAsync();
-        var stockTask = GetAllStocksAsync();
+ protected override async Task OnInitializedAsync()
+ {
+ var orderTask = GetSupplierOrdersAsync();
+ var supplierTask = GetSuppliersAsync();
+ var stockTask = GetAllStocksAsync();
 
-        await Task.WhenAll(orderTask, supplierTask, stockTask);
+ await Task.WhenAll(orderTask, supplierTask, stockTask);
 
-        ResetNewOrderItems();
+ ResetNewOrderItems();
 
-        if (isLoading != null)
-            isLoading = false;
-    }
+ if (isLoading != null)
+ isLoading = false;
+ }
 
-    private Func<SupplierOrderDto, bool> _orderQuickFilter => x =>
-    {
-        if (string.IsNullOrWhiteSpace(_orderSearchString))
-            return true;
+ private Func<SupplierOrderDto, bool> _orderQuickFilter => x =>
+ {
+ if (string.IsNullOrWhiteSpace(_orderSearchString))
+ return true;
 
-        if (x.Id.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.Id.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.Supplier.Name.Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.Supplier.Name.Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.StatusChangeDate?.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase) ?? false)
-            return true;
+ if (x.StatusChangeDate?.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase) ?? false)
+ return true;
 
-        if (x.CreatedDate.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.CreatedDate.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        if (x.Status.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
-            return true;
+ if (x.Status.ToString().Contains(_orderSearchString, StringComparison.OrdinalIgnoreCase))
+ return true;
 
-        return false;
-    };
+ return false;
+ };
 
 
-    private async Task GetSupplierOrdersAsync()
-    {
-        var result = await ApiClient.GetSupplierOrdersAsync();
-        if (!result.Success)
-        {
-            errorMessage = result.Error;
-            isLoading = null;
-            return;
-        }
+ private async Task GetSupplierOrdersAsync()
+ {
+ var result = await ApiClient.GetSupplierOrdersAsync();
+ if (!result.Success)
+ {
+ errorMessage = result.Error;
+ isLoading = null;
+ return;
+ }
 
-        orders = result.Data ?? [];
-    }
+ orders = result.Data ?? [];
+ }
 
-    private async Task GetSuppliersAsync()
-    {
-        var result = await ApiClient.GetSuppliersAsync();
-        if (!result.Success)
-        {
-            errorMessage = result.Error;
-            isLoading = null;
-            return;
-        }
+ private async Task GetSuppliersAsync()
+ {
+ var result = await ApiClient.GetSuppliersAsync();
+ if (!result.Success)
+ {
+ errorMessage = result.Error;
+ isLoading = null;
+ return;
+ }
 
-        suppliers = result.Data ?? [];
-    }
+ suppliers = result.Data ?? [];
+ }
 
-    private async Task GetAllStocksAsync()
-    {
-        var result = await ApiClient.GetAllStocksAsync();
-        if (!result.Success)
-        {
-            errorMessage = result.Error;
-            isLoading = null;
-            return;
-        }
+ private async Task GetAllStocksAsync()
+ {
+ var result = await ApiClient.GetAllStocksAsync();
+ if (!result.Success)
+ {
+ errorMessage = result.Error;
+ isLoading = null;
+ return;
+ }
 
-        stocks = result.Data ?? [];
-    }
+ stocks = result.Data ?? [];
+ }
 
-    void ResetNewOrderItems()
-    {
-        NewOrderItems = stocks.ToDictionary(s => s.StockId ?? 0, s => 0);
-    }
+ void ResetNewOrderItems()
+ {
+ NewOrderItems = stocks.ToDictionary(s => s.StockId ??0, s =>0);
+ }
 
-    void Toggle(int id)
-    {
-        if (ExpandedOrders.Contains(id))
-            ExpandedOrders.Remove(id);
-        else
-            ExpandedOrders.Add(id);
-    }
+ void Toggle(int id)
+ {
+ if (ExpandedOrders.Contains(id))
+ ExpandedOrders.Remove(id);
+ else
+ ExpandedOrders.Add(id);
+ }
 
-    async Task MarkOrderReceived(int orderId)
-    {
-        var result = await ApiClient.MarkOrderReceivedAsync(orderId);
-        if (!result.Success)
-        {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
-            return;
-        }
+ async Task MarkOrderReceived(int orderId)
+ {
+ var result = await ApiClient.MarkOrderReceivedAsync(orderId);
+ if (!result.Success)
+ {
+ await JS.InvokeVoidAsync("alert", $"{L["ErrorLabel"]}: {result.Error}");
+ return;
+ }
 
-        await Load();
-    }
+ await Load();
+ }
 
-    async Task CancelOrder(int id)
-    {
-        var result = await ApiClient.CancelOrderAsync(id);
-        if (!result.Success)
-        {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
-            return;
-        }
+ async Task CancelOrder(int id)
+ {
+ var result = await ApiClient.CancelOrderAsync(id);
+ if (!result.Success)
+ {
+ await JS.InvokeVoidAsync("alert", $"{L["ErrorLabel"]}: {result.Error}");
+ return;
+ }
 
-        await Load();
-    }
+ await Load();
+ }
 
-    async Task CreateOrder()
-    {
-        NewOrder.Items = NewOrderItems
-            .Where(x => x.Value > 0)
-            .Select(x => new OrderItemDto
-            {
-                StockId = x.Key,
-                Amount = x.Value
-            })
-            .ToList();
+ async Task CreateOrder()
+ {
+ NewOrder.Items = NewOrderItems
+ .Where(x => x.Value >0)
+ .Select(x => new OrderItemDto
+ {
+ StockId = x.Key,
+ Amount = x.Value
+ })
+ .ToList();
 
-        if (NewOrder.Items.Count == 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please add at least one item to the order.");
-            return;
-        }
+ if (NewOrder.Items.Count ==0)
+ {
+ await JS.InvokeVoidAsync("alert", L["PleaseAddAtLeastOneItemToOrder"].ToString());
+ return;
+ }
 
-        var result = await ApiClient.CreateSupplierOrderAsync(NewOrder);
-        if (!result.Success)
-        {
-            await JS.InvokeVoidAsync("alert", $"Error: {result.Error}");
-            return;
-        }
+ var result = await ApiClient.CreateSupplierOrderAsync(NewOrder);
+ if (!result.Success)
+ {
+ await JS.InvokeVoidAsync("alert", $"{L["ErrorLabel"]}: {result.Error}");
+ return;
+ }
 
-        ResetNewOrderItems();
+ ResetNewOrderItems();
 
-        await Load();
-    }
+ await Load();
+ }
 
-    async Task Load()
-    {
-        var supplierTask = GetSupplierOrdersAsync();
-        var stockTask = GetAllStocksAsync();
+ async Task Load()
+ {
+ var supplierTask = GetSupplierOrdersAsync();
+ var stockTask = GetAllStocksAsync();
 
-        await Task.WhenAll(supplierTask, stockTask);
+ await Task.WhenAll(supplierTask, stockTask);
 
-        StateHasChanged();
-    }
+ StateHasChanged();
+ }
 
-    [Inject] IJSRuntime JS { get; set; } = default!;
+ [Inject] IJSRuntime JS { get; set; } = default!;
 }
