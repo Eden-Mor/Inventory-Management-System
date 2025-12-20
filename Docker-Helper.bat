@@ -30,11 +30,11 @@ if /i "%ONLY_DOWN%"=="y" (
 )
 
 REM === Choose docker-compose file ===
-set /p USE_OVERRIDE="Use docker-compose.override.yml instead of docker-compose.prod.yml? (y/N) [N]: "
-if /i "%USE_OVERRIDE%"=="y" (
-    set DOCKER_FILE=docker-compose.override.yml
-) else (
+set /p USE_OVERRIDE="Use docker-compose.override.yml instead of docker-compose.prod.yml? (Y/n) [Y]: "
+if /i "%USE_OVERRIDE%"=="n" (
     set DOCKER_FILE=docker-compose.prod.yml
+) else (
+    set DOCKER_FILE=docker-compose.override.yml
 )
 
 REM === Ask for a service command (init-db / migrate-db) ===
