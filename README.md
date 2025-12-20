@@ -36,3 +36,12 @@ The app does not have authentication at this time, so I recommend using firewall
 1. Grab the latest code from the repository
 2. Copy over the files appsettings.json from IMS-Backend and any templates you made in IMS-Backend/Templates to the new code
 3. Follow steps 5-10 from the LIVE Setup section
+
+## Backing a backup of the database
+1. Stop the containers from running using Docker Desktop (or the Docker-Helper.bat))
+2. Create a folder in C:\IMS-Backup (or anywhere you want)
+3. Open command prompt and run the following command:
+   ``` 
+   docker run --rm -v ims_pgdata:/volume -v C:/IMS-Backup:/backup alpine sh -c "tar czf /backup/pgdata.tar.gz -C /volume ."
+   ```
+   Note: if you put the backup folder somewhere else, change the path accordingly in the command above
